@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Store - Products</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-white">Digital Store</h1>
+        <p class="text-slate-400 text-sm">Choose from our digital products, gift cards, and top-ups.</p>
+      </div>
+
+      <div class="relative w-full md:w-80">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          placeholder="Search products..." 
+          class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-indigo-500 transition"
+        >
+      </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      
+      <aside class="space-y-6">
+        
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+          <h2 class="text-lg font-semibold mb-4 text-indigo-400">Categories</h2>
+          <ul id="categoryList" class="space-y-2 text-sm">
+            </ul>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-xl border border-slate-700 space-y-4">
+          <h2 class="text-lg font-semibold text-indigo-400">Filters & Sort</h2>
+          
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Sort By</label>
+            <select id="sortSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+              <option value="featured">Featured</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="name">Name (A-Z)</option>
+            </select>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-2">
+            <input type="checkbox" id="inStockFilter" class="w-4 h-4 rounded accent-indigo-600 bg-slate-900 border-slate-700">
+            <label for="inStockFilter" class="text-sm cursor-pointer text-slate-300">In Stock Only</label>
+          </div>
+        </div>
+
+      </aside>
+
+      <main class="lg:col-span-3">
+        <div class="flex justify-between items-center mb-4">
+          <h2 id="currentCategoryTitle" class="text-xl font-bold">All Products</h2>
+          <span id="productCount" class="text-xs bg-slate-800 px-3 py-1 rounded-full text-slate-400">0 Items</span>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          </div>
+      </main>
+
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // DYNAMIC PRODUCTS DATA (This normally comes from Admin API/DB)
+    // -------------------------------------------------------------
+    const productsData = [
+      { id: 1, name: "Steam Gift Card $5", category: "Gift Cards", price: 5.00, stock: 25, description: "Instant digital code for Steam balance.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=Steam+$5" },
+      { id: 2, name: "Steam Gift Card $10", category: "Gift Cards", price: 10.00, stock: 12, description: "Instant digital code for Steam balance.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=Steam+$10" },
+      { id: 3, name: "ChatGPT Plus 1 Month", category: "AI", price: 20.00, stock: 5, description: "Access GPT-4 and faster response times.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=ChatGPT+Plus" },
+      { id: 4, name: "Valorant Points 1000 VP", category: "Game Top-Ups", price: 11.99, stock: 0, description: "Top-up code for Valorant in-game currency.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=Valorant+VP" },
+      { id: 5, name: "Spotify Premium 3 Months", category: "Streaming", price: 15.00, stock: 8, description: "Ad-free music streaming sub.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=Spotify" },
+      { id: 6, name: "Windows 11 Pro Key", category: "Software", price: 14.99, stock: 50, description: "OEM Lifetime key for 1 PC.", image: "https://via.placeholder.com/300x200/1e293b/ffffff?text=Win+11+Pro" }
+    ];
+
+    const categoriesList = ["All", "AI", "Gift Cards", "Gaming", "Game Top-Ups", "Streaming", "Software", "Accounts", "Mobile Apps", "Other"];
+
+    // State Variables
+    let selectedCategory = "All";
+    let searchQuery = "";
+    let sortBy = "featured";
+    let inStockOnly = false;
+
+    // DOM Elements
+    const productGrid = document.getElementById("productGrid");
+    const categoryList = document.getElementById("categoryList");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
+    const inStockFilter = document.getElementById("inStockFilter");
+    const currentCategoryTitle = document.getElementById("currentCategoryTitle");
+    const productCount = document.getElementById("productCount");
+
+    // Initialize Page
+    function init() {
+      renderCategories();
+      renderProducts();
+    }
+
+    // Render Category Sidebar
+    function renderCategories() {
+      categoryList.innerHTML = categoriesList.map(cat => `
+        <li>
+          <button 
+            onclick="selectCategory('${cat}')" 
+            class="w-full text-left px-3 py-2 rounded-lg transition ${selectedCategory === cat ? 'bg-indigo-600 text-white font-semibold' : 'text-slate-400 hover:bg-slate-700/50 hover:text-white'}"
+          >
+            ${cat}
+          </button>
+        </li>
+      `).join('');
+    }
+
+    // Render Product Cards based on Filters & Search
+    function renderProducts() {
+      let filtered = productsData.filter(p => {
+        const matchesCategory = selectedCategory === "All" || p.category === selectedCategory;
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStock = inStockOnly ? p.stock > 0 : true;
+        return matchesCategory && matchesSearch && matchesStock;
+      });
+
+      // Sorting
+      if (sortBy === "price-low") filtered.sort((a, b) => a.price - b.price);
+      if (sortBy === "price-high") filtered.sort((a, b) => b.price - a.price);
+      if (sortBy === "name") filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+      currentCategoryTitle.textContent = selectedCategory;
+      productCount.textContent = `${filtered.length} Items`;
+
+      if (filtered.length === 0) {
+        productGrid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-500">No products found matching your criteria.</div>`;
+        return;
+      }
+
+      productGrid.innerHTML = filtered.map(product => `
+        <div class="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 flex flex-col justify-between hover:border-slate-500 transition">
+          <div>
+            <img src="${product.image}" alt="${product.name}" class="w-full h-40 object-cover">
+            <div class="p-4">
+              <span class="text-xs font-semibold px-2 py-1 bg-slate-700 rounded text-slate-300">${product.category}</span>
+              <h3 class="font-bold text-white text-base mt-2">${product.name}</h3>
+              <p class="text-slate-400 text-xs mt-1 line-clamp-2">${product.description}</p>
+            </div>
+          </div>
+
+          <div class="p-4 pt-0 border-t border-slate-700/50 mt-4">
+            <div class="flex justify-between items-center my-3">
+              <span class="text-lg font-bold text-green-400">$${product.price.toFixed(2)}</span>
+              <span class="text-xs px-2 py-0.5 rounded ${product.stock > 0 ? 'bg-green-900/40 text-green-400 border border-green-700/50' : 'bg-red-900/40 text-red-400 border border-red-700/50'}">
+                ${product.stock > 0 ? `Stock: ${product.stock}` : 'Out of Stock'}
+              </span>
+            </div>
+
+            <button 
+              ${product.stock === 0 ? 'disabled' : ''} 
+              onclick="buyProduct(${product.id})"
+              class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-medium text-sm rounded-lg transition flex items-center justify-center gap-2"
+            >
+              <i class="fa-solid fa-cart-shopping"></i> ${product.stock > 0 ? 'Purchase Now' : 'Sold Out'}
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Event Listeners
+    function selectCategory(cat) {
+      selectedCategory = cat;
+      renderCategories();
+      renderProducts();
+    }
+
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value;
+      renderProducts();
+    });
+
+    sortSelect.addEventListener("change", (e) => {
+      sortBy = e.target.value;
+      renderProducts();
+    });
+
+    inStockFilter.addEventListener("change", (e) => {
+      inStockOnly = e.target.checked;
+      renderProducts();
+    });
+
+    function buyProduct(id) {
+      alert(`Redirecting to checkout for Product ID: ${id}`);
+    }
+
+    // Run on Load
+    init();
+  </script>
+</body>
+</html>
