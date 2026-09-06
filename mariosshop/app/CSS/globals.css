@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background-color: #05050a;
+  background-image: url('/images/site-bg.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  /* Fixed so the image stays put behind the content while the page
+     scrolls, instead of scrolling away with it. */
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Nearly every page on the site paints its own fully opaque bg-zinc-950
+   background on top of <body>, which would otherwise hide the image
+   completely. Rather than editing every single page file, this one
+   override makes every use of that exact Tailwind class slightly
+   see-through instead — the starfield background now shows through
+   consistently everywhere it's used, with no other visual changes. */
+.bg-zinc-950 {
+  background-color: rgba(9, 9, 11, 0.88) !important;
+}
