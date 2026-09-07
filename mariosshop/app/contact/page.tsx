@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
@@ -206,7 +206,7 @@ function fieldBorder(hasError?: string) {
 /*  Contact page                                                              */
 /* -------------------------------------------------------------------------- */
 
-export default function ContactPage() {
+function ContactPageContent() {
   const { currentUser } = useAuth();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('help');
@@ -677,5 +677,13 @@ export default function ContactPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function ContactPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContactPageContent />
+    </Suspense>
   );
 }
