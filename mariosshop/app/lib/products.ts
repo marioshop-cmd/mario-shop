@@ -1,8 +1,9 @@
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+
 /**
  * Shared product catalog. Seeded once with the same brands that used to be
- * hardcoded in services/page.tsx, then persisted — so admin's "Product
- * Control" dashboard and the public /services page always show the same
- * data, instead of two disconnected copies.
+ * hardcoded in services/page.tsx, then persisted in Supabase — so every
+ * browser and deployment reads the same catalog.
  */
 
 export interface ProductVariant {
@@ -66,6 +67,18 @@ export const CATEGORIES = [
 ];
 
 const STORAGE_KEY = 'app_products';
+const REALTIME_TABLE = 'site_catalog';
+
+let realtimeClient: SupabaseClient | null = null;
+
+function getRealtimeClient(): SupabaseClient | null {
+  if (realtimeClient) return realtimeClient;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  realtimeClient = createClient(url, key);
+  return realtimeClient;
+}
 
 const SEED_BRANDS: BrandService[] = [
   {
@@ -171,38 +184,32 @@ const SEED_BRANDS: BrandService[] = [
   },
 ];
 
-function readBrands(): BrandService[] {
-  if (typeof window === 'undefined') return SEED_BRANDS;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_BRANDS));
-      return SEED_BRANDS;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : SEED_BRANDS;
-  } catch {
-    return SEED_BRANDS;
-  }
+async function readBrands(): Promise<BrandService[]> {
+  const response = await fetch('/api/products', { cache: 'no-store' });
+  if (!response.ok) throw new Error('Unable to load the shared product catalog');
+  const parsed: unknown = await response.json();
+  if (Array.isArray(parsed) && parsed.length > 0) return parsed as BrandService[];
+  await writeBrands(SEED_BRANDS);
+  return SEED_BRANDS;
 }
 
-function writeBrands(brands: BrandService[]): boolean {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(brands));
-    return true;
-  } catch {
-    return false;
-  }
+async function writeBrands(brands: BrandService[]): Promise<boolean> {
+  const response = await fetch('/api/products', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(brands),
+  });
+  return response.ok;
 }
 
-export function getAllBrands(): BrandService[] {
+export async function getAllBrands(): Promise<BrandService[]> {
   return readBrands();
 }
 
 /** Flattens every brand's products into one row-per-product list — what the
  * admin's simple product table works with. */
-export function getAllProductsFlat(): FlatProduct[] {
-  return readBrands().flatMap((brand) =>
+export async function getAllProductsFlat(): Promise<FlatProduct[]> {
+  return (await readBrands()).flatMap((brand) =>
     brand.products.map((p) => ({ ...p, category: brand.category, brandId: brand.id }))
   );
 }
@@ -219,8 +226,8 @@ export interface FeaturedCarouselItem {
   link: string;
 }
 
-export function getFeaturedProducts(): FeaturedCarouselItem[] {
-  return readBrands().flatMap((brand) =>
+export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
+  return (await readBrands()).flatMap((brand) =>
     brand.products
       .filter((p) => p.featured)
       .map((p) => ({
@@ -239,7 +246,7 @@ export function getFeaturedProducts(): FeaturedCarouselItem[] {
 /** Adds a brand-new product. Since the admin form doesn't deal in variants
  * or existing brands, each new product becomes its own single-product
  * "brand" tile on the storefront, filed under the chosen category. */
-export function addProduct(input: {
+export async function addProduct(input: {
   name: string;
   category: string;
   price: string;
@@ -250,8 +257,8 @@ export function addProduct(input: {
   importantNotice?: string[];
   variants?: ProductVariant[];
   featured?: boolean;
-}): FlatProduct | null {
-  const brands = readBrands();
+}): Promise<FlatProduct | null> {
+  const brands = await readBrands();
   const productId = Date.now();
 
   const newProduct: Product = {
@@ -282,13 +289,13 @@ export function addProduct(input: {
   // localStorage was full (easy to hit once several base64 product images
   // pile up), the write would silently fail and the admin form would just
   // reset as if it succeeded, with nothing actually added.
-  const saved = writeBrands(brands);
+  const saved = await writeBrands(brands);
   if (!saved) return null;
 
   return { ...newProduct, category: input.category, brandId };
 }
 
-export function updateProduct(
+export async function updateProduct(
   brandId: string,
   productId: number,
   updates: Partial<{
@@ -303,8 +310,8 @@ export function updateProduct(
     variants: ProductVariant[];
     featured: boolean;
   }>
-): boolean {
-  const brands = readBrands();
+): Promise<boolean> {
+  const brands = await readBrands();
   const brandIdx = brands.findIndex((b) => b.id === brandId);
   if (brandIdx === -1) return false;
 
@@ -329,8 +336,8 @@ export function updateProduct(
 
 /** Deletes a single product; if it was the last product in its brand, the
  * now-empty brand tile is removed too. */
-export function deleteProduct(brandId: string, productId: number): boolean {
-  const brands = readBrands();
+export async function deleteProduct(brandId: string, productId: number): Promise<boolean> {
+  const brands = await readBrands();
   const brandIdx = brands.findIndex((b) => b.id === brandId);
   if (brandIdx === -1) return false;
 
@@ -344,8 +351,8 @@ export function deleteProduct(brandId: string, productId: number): boolean {
 /** Reduces a product's stock count after a purchase (called from checkout).
  * Clamps at 0 so stock never goes negative even if two tabs check out at
  * the same time. Silently no-ops if the brand/product no longer exists. */
-export function decrementStock(brandId: string, productId: number, quantity: number): boolean {
-  const brands = readBrands();
+export async function decrementStock(brandId: string, productId: number, quantity: number): Promise<boolean> {
+  const brands = await readBrands();
   const brandIdx = brands.findIndex((b) => b.id === brandId);
   if (brandIdx === -1) return false;
 
@@ -362,10 +369,20 @@ export function decrementStock(brandId: string, productId: number, quantity: num
 }
 
 export function onProductsChanged(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => {};
-  const handler = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY) callback();
+  const client = getRealtimeClient();
+  const channel = client
+    ?.channel('site-catalog-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: REALTIME_TABLE },
+      callback,
+    )
+    .subscribe();
+
+  // Keep a fallback for deployments where Realtime has not yet been enabled.
+  const interval = window.setInterval(callback, 30000);
+  return () => {
+    window.clearInterval(interval);
+    if (channel) void client?.removeChannel(channel);
   };
-  window.addEventListener('storage', handler);
-  return () => window.removeEventListener('storage', handler);
 }

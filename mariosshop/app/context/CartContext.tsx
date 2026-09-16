@@ -145,7 +145,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Reduce inventory for whatever was actually bought.
     for (const item of cart) {
       if (item.brandId && item.productId !== undefined) {
-        decrementStock(item.brandId, item.productId, item.quantity);
+        void decrementStock(item.brandId, item.productId, item.quantity);
       }
     }
 

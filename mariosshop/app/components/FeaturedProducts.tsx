@@ -10,11 +10,14 @@ export default function FeaturedProducts() {
 
   useEffect(() => {
     const load = () => {
-      const featured = getFeaturedProducts();
-      setProducts(featured);
-      // Keep the current selection if it's still featured; otherwise fall
-      // back to the first one so the carousel never shows a stale pick.
-      setActiveProduct((prev) => featured.find((p) => p.id === prev?.id) || featured[0] || null);
+      getFeaturedProducts().then((featured) => {
+        setProducts(featured);
+        // Keep the current selection if it's still featured; otherwise fall
+        // back to the first one so the carousel never shows a stale pick.
+        setActiveProduct((prev) => featured.find((p) => p.id === prev?.id) || featured[0] || null);
+      }).catch((error: unknown) => {
+        console.error('Unable to load featured products:', error);
+      });
     };
     load();
     const unsubscribe = onProductsChanged(load);

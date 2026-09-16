@@ -97,7 +97,11 @@ export default function DirectGridAdmin() {
   // actually shows up on the storefront instead of vanishing on refresh.
   const [products, setProducts] = useState<FlatProduct[]>([]);
 
-  const refreshProducts = () => setProducts(getAllProductsFlat());
+  const refreshProducts = () => {
+    getAllProductsFlat().then(setProducts).catch((error: unknown) => {
+      console.error('Unable to load products:', error);
+    });
+  };
 
   useEffect(() => {
     refreshProducts();
@@ -282,7 +286,7 @@ export default function DirectGridAdmin() {
       ...(newFeatured ? { featured: true } : {}),
     });
 
-    let result = addProductToCatalog(buildInput(newImage));
+    let result = await addProductToCatalog(buildInput(newImage));
 
     // Storage full — most likely because of everything ALREADY stored,
     // not this image specifically. Try once more with the image shrunk
@@ -291,7 +295,7 @@ export default function DirectGridAdmin() {
     if (!result && newImage) {
       try {
         const smaller = await recompressDataUrl(newImage, 400, 0.5);
-        result = addProductToCatalog(buildInput(smaller));
+        result = await addProductToCatalog(buildInput(smaller));
       } catch {
         // fall through to the failure alert below
       }
@@ -323,9 +327,13 @@ export default function DirectGridAdmin() {
     return result;
   };
 
-  const handleDeleteProduct = (brandId: string, id: number) => {
+  const handleDeleteProduct = async (brandId: string, id: number) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      deleteProductFromCatalog(brandId, id);
+      const deleted = await deleteProductFromCatalog(brandId, id);
+      if (!deleted) {
+        alert("Failed to delete this product from the shared catalog.");
+        return;
+      }
       refreshProducts();
     }
   };
@@ -646,11 +654,11 @@ export default function DirectGridAdmin() {
                       <div className="space-x-1 whitespace-nowrap">
                         <button onClick={async () => {
                           const buildUpdates = (image: string) => ({ name: pName, category: pCategory, description: pDesc, price: pPrice, stock: pStock, image, features: pFeatures.split("\n").map(s => s.trim()).filter(Boolean), importantNotice: pImportantNotice.split("\n").map(s => s.trim()).filter(Boolean), variants: draftsToVariants(pVariants), featured: pFeatured });
-                          let ok = updateProductInCatalog(p.brandId, p.id, buildUpdates(pImage));
+                          let ok = await updateProductInCatalog(p.brandId, p.id, buildUpdates(pImage));
                           if (!ok && pImage) {
                             try {
                               const smaller = await recompressDataUrl(pImage, 400, 0.5);
-                              ok = updateProductInCatalog(p.brandId, p.id, buildUpdates(smaller));
+                              ok = await updateProductInCatalog(p.brandId, p.id, buildUpdates(smaller));
                             } catch { /* fall through to alert below */ }
                           }
                           if (!ok) { alert("⚠️ Failed to save — your browser's storage is completely full, even after shrinking the image further. Please delete a few old/unused products to free up space, then try again."); return; }
