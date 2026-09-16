@@ -286,7 +286,13 @@ export default function DirectGridAdmin() {
       ...(newFeatured ? { featured: true } : {}),
     });
 
-    let result = await addProductToCatalog(buildInput(newImage));
+    let result: FlatProduct | null;
+    try {
+      result = await addProductToCatalog(buildInput(newImage));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to connect to the shared catalog.");
+      return null;
+    }
 
     // Storage full — most likely because of everything ALREADY stored,
     // not this image specifically. Try once more with the image shrunk

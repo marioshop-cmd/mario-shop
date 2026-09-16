@@ -26,7 +26,10 @@ export async function GET() {
 
   if (error) {
     console.error('Failed to load product catalog:', error);
-    return NextResponse.json({ error: 'Failed to load product catalog' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to load product catalog', details: error.message, code: error.code },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json(data?.brands ?? []);
@@ -40,18 +43,26 @@ export async function PUT(request: Request) {
     console.error(error);
     return NextResponse.json({ error: 'Supabase is not configured' }, { status: 500 });
   }
-  const brands: unknown = await request.json();
+  let brands: unknown;
+  try {
+    brands = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid catalog JSON' }, { status: 400 });
+  }
   if (!Array.isArray(brands)) {
     return NextResponse.json({ error: 'Catalog must be an array' }, { status: 400 });
   }
 
   const { error } = await supabase
     .from('site_catalog')
-    .upsert({ id: 1, brands }, { onConflict: 'id' });
+    .upsert({ id: 1, brands, updated_at: new Date().toISOString() }, { onConflict: 'id' });
 
   if (error) {
     console.error('Failed to save product catalog:', error);
-    return NextResponse.json({ error: 'Failed to save product catalog' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to save product catalog', details: error.message, code: error.code },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });

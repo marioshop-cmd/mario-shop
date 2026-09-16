@@ -186,8 +186,14 @@ const SEED_BRANDS: BrandService[] = [
 
 async function readBrands(): Promise<BrandService[]> {
   const response = await fetch('/api/products', { cache: 'no-store' });
-  if (!response.ok) throw new Error('Unable to load the shared product catalog');
   const parsed: unknown = await response.json();
+  if (!response.ok) {
+    const details =
+      parsed && typeof parsed === 'object' && 'details' in parsed
+        ? String((parsed as { details: unknown }).details)
+        : 'Unknown server error';
+    throw new Error(`Unable to load the shared product catalog: ${details}`);
+  }
   if (Array.isArray(parsed) && parsed.length > 0) return parsed as BrandService[];
   await writeBrands(SEED_BRANDS);
   return SEED_BRANDS;
