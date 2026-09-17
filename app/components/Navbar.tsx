@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { Store } from 'lucide-react';
+import { CircleHelp, Home, Mail, Menu, ShoppingBag, Store, Users, X } from 'lucide-react';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -13,6 +13,7 @@ export default function Navbar() {
   const { currentUser, logoutUser } = useAuth();
   const { totalCartItemsCount, openCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const navLinks = [
     {
@@ -165,6 +166,58 @@ export default function Navbar() {
         </div>
 
       </div>
+
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800/90 bg-zinc-950/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md md:hidden"
+        aria-label="Mobile page navigation"
+      >
+        <div className="mx-auto flex max-w-md items-center justify-around">
+          {navLinks.slice(0, 3).map((link) => (
+            <Link
+              key={link.name}
+              href={link.path}
+              className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
+                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              {link.name === 'HOME' ? <Home className="h-5 w-5" /> : link.name === 'SERVICES' ? <Store className="h-5 w-5" /> : <ShoppingBag className="h-5 w-5" />}
+              <span>{link.name === 'MY ORDERS' ? 'Orders' : link.name[0] + link.name.slice(1).toLowerCase()}</span>
+            </Link>
+          ))}
+          <button
+            type="button"
+            onClick={() => setIsMoreOpen((isOpen) => !isOpen)}
+            aria-expanded={isMoreOpen}
+            className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
+              isMoreOpen || navLinks.slice(3).some((link) => pathname === link.path)
+                ? 'bg-red-500/10 text-red-500'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            {isMoreOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
+
+      {isMoreOpen && (
+        <div className="fixed bottom-[4.5rem] right-3 z-50 w-56 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl md:hidden">
+          <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Explore</p>
+          {navLinks.slice(3).map((link) => (
+            <Link
+              key={link.name}
+              href={link.path}
+              onClick={() => setIsMoreOpen(false)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
+                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+              }`}
+            >
+              {link.name === 'REFERRAL' ? <Users className="h-4 w-4" /> : link.name === 'CONTACT' ? <Mail className="h-4 w-4" /> : <CircleHelp className="h-4 w-4" />}
+              {link.name}
+            </Link>
+          ))}
+        </div>
+      )}
     </header>
   );
 }

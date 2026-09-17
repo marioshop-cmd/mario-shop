@@ -31,7 +31,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#09090b" />
       </head>
 
-      <body className="bg-zinc-950 text-white antialiased flex min-h-screen flex-col">
+      <body className="flex min-h-screen flex-col bg-zinc-950 pb-20 text-white antialiased md:pb-0">
         <AuthProvider>
           <CartProvider>
             <Navbar />
