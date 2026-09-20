@@ -5,6 +5,8 @@
   --foreground: #171717;
 }
 
+/* Tailwind CSS v4 at-rule; ignored by generic CSS linters. */
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -30,6 +32,19 @@ body {
   background-repeat: no-repeat;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* `background-attachment: fixed` is unreliable on mobile browsers
+   (iOS Safari in particular) — instead of scrolling normally, the image
+   often fails to paint at all, leaving only the flat #05050a fallback
+   color behind the content. Below the tablet breakpoint we switch to
+   `scroll`, which mobile browsers render correctly; the image still
+   covers the full page, it just moves with the content instead of
+   staying pinned. Desktop keeps the original fixed/parallax behavior. */
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 /* Nearly every page on the site paints its own fully opaque bg-zinc-950

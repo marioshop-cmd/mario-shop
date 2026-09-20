@@ -1,189 +1,303 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import {
+  CircleHelp,
+  Home,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  Search,
+  ShoppingBag,
+  Store,
+  Users,
+  X,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { Store, User } from 'lucide-react';
-import NotificationPrompt from './NotificationPrompt';
-import LanguageSwitcher from '../language/LanguageSwitcher';
+import { getAllProductsFlat, onProductsChanged, type FlatProduct } from '../lib/products';
+
+const navLinks = [
+  { name: 'HOME', path: '/', icon: <Home className="h-4 w-4" /> },
+  { name: 'SERVICES', path: '/services', icon: <Store className="h-4 w-4" /> },
+  { name: 'MY ORDERS', path: '/my-orders', icon: <ShoppingBag className="h-4 w-4" /> },
+  { name: 'REFERRAL', path: '/referral', icon: <Users className="h-4 w-4" /> },
+  { name: 'CONTACT', path: '/contact', icon: <Mail className="h-4 w-4" /> },
+  { name: 'FAQ', path: '/faq', icon: <CircleHelp className="h-4 w-4" /> },
+];
+
+const mobileLinks = navLinks.slice(0, 3).map(({ name, path, icon }) => ({
+  name: name === 'MY ORDERS' ? 'Orders' : name[0] + name.slice(1).toLowerCase(),
+  path,
+  icon: React.cloneElement(icon, { className: 'h-5 w-5' }),
+}));
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { currentUser } = useAuth();
+  const router = useRouter();
+  const { currentUser, logoutUser } = useAuth();
   const { totalCartItemsCount, openCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
-
-  const navLinks = [
-    {
-      name: 'HOME',
-      path: '/',
-      icon: (
-        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'SERVICES',
-      path: '/services',
-      icon: <Store className="w-4 h-4 shrink-0" />,
-    },
-    {
-      name: 'MY ORDERS',
-      path: '/my-orders',
-      icon: (
-        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-          <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'REFERRAL',
-      path: '/referral',
-      icon: (
-        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-          <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'CONTACT',
-      path: '/contact',
-      icon: (
-        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-          <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-        </svg>
-      ),
-    },
-    {
-      name: 'FAQ',
-      path: '/faq',
-      icon: (
-        <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z" />
-        </svg>
-      ),
-    },
-  ];
-
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const userBalance = currentUser?.b9chich ?? 0;
+  const moreLinks = navLinks.slice(3);
+
+  // Live product catalog for the search bar — pulled from the same shared
+  // source the Services page and admin dashboard already use, so it's
+  // never hardcoded and stays current automatically: new products,
+  // renamed products, and deleted products all reflect here with no
+  // changes needed to this file.
+  const [products, setProducts] = useState<FlatProduct[]>([]);
+  useEffect(() => {
+    setProducts(getAllProductsFlat());
+    const unsubscribe = onProductsChanged(() => setProducts(getAllProductsFlat()));
+    return unsubscribe;
+  }, []);
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const searchResults = trimmedQuery
+    ? products.filter((product) => product.name.toLowerCase().includes(trimmedQuery)).slice(0, 8)
+    : [];
+
+  // Sends the shopper straight to that product's detail view, reusing the
+  // ?brandId=&productId= deep link the Services page already listens for.
+  const handleSelectResult = (product: FlatProduct) => {
+    router.push(`/services?brandId=${product.brandId}&productId=${product.id}`);
+    setSearchQuery('');
+    setIsSearchFocused(false);
+    setIsMobileSearchOpen(false);
+  };
+
+  const renderResultsList = () => (
+    searchResults.length === 0 ? (
+      <p className="px-4 py-3 text-xs text-zinc-500">No results found.</p>
+    ) : (
+      searchResults.map((product) => (
+        <button
+          key={`${product.brandId}-${product.id}`}
+          type="button"
+          onMouseDown={() => handleSelectResult(product)}
+          className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs text-zinc-200 transition hover:bg-zinc-800/80"
+        >
+          <img
+            src={product.image}
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-lg bg-zinc-900 object-cover"
+          />
+          <span className="truncate">{product.name}</span>
+        </button>
+      ))
+    )
+  );
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/95 border-b border-zinc-800/80 backdrop-blur-md px-3 md:px-6 py-2.5">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-
-        {/* LEFT SECTION: Logo + Nav Links */}
-        <div className="flex items-center gap-4 lg:gap-5 min-w-0">
-          <Link href="/" className="shrink-0 flex items-center group">
-            <div className="relative flex items-center justify-center">
-              <img 
-                src="/images/logo.png" 
-                alt="Mario's Shop" 
-                className="relative h-10 w-auto object-contain drop-shadow-[0_0_8px_rgba(239,68,68,0.4)] group-hover:scale-105 transition duration-300" 
-              />
-            </div>
+    <>
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/95 px-4 py-3 backdrop-blur-md md:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Mario's Shop home">
+            <span className="text-lg">🍄</span>
+            <span className="text-sm font-black tracking-tight text-white sm:text-base">
+              MARIO'S<span className="text-red-500">.</span>SHOP
+            </span>
           </Link>
 
-          {/* NAV LINKS */}
-          <nav className="hidden lg:flex items-center gap-3 xl:gap-5 overflow-x-auto no-scrollbar">
-            {navLinks.map((link) => {
-              const isActive = pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.path}
-                  className={`relative flex items-center gap-1.5 text-[11px] xl:text-xs font-extrabold tracking-wider py-1 transition-colors duration-200 shrink-0 ${
-                    isActive ? 'text-red-500' : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {link.icon}
-                  <span className="whitespace-nowrap">{link.name}</span>
-
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                  )}
-                </Link>
-              );
-            })}
+          <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
+            {navLinks.map((link) => (
+              <Link
+                key={link.name}
+                href={link.path}
+                className={`relative flex items-center gap-2 py-1 text-xs font-extrabold tracking-wider transition-colors md:text-sm ${
+                  pathname === link.path ? 'text-red-500' : 'text-zinc-400 hover:text-white'
+                }`}
+              >
+                {link.icon}
+                <span className="whitespace-nowrap">{link.name}</span>
+                {pathname === link.path && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
+                )}
+              </Link>
+            ))}
           </nav>
+
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="relative hidden w-52 md:block lg:w-64">
+              <input
+                type="text"
+                placeholder="What are you looking for?"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className="w-full rounded-xl border border-red-500/40 bg-zinc-900/90 py-2 pl-9 pr-3 text-xs text-zinc-100 outline-none transition-all placeholder-zinc-500 focus:border-red-500"
+              />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-red-500" />
+              {isSearchFocused && trimmedQuery && (
+                <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+                  {renderResultsList()}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileSearchOpen((isOpen) => !isOpen)}
+              aria-label="Search"
+              aria-expanded={isMobileSearchOpen}
+              className="rounded-xl border border-red-500/40 bg-zinc-900/90 p-2 text-red-500 transition hover:border-red-500 md:hidden"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={openCart}
+              aria-label={`Open cart${totalCartItemsCount > 0 ? `, ${totalCartItemsCount} items` : ''}`}
+              className="relative rounded-xl border border-red-500/40 bg-zinc-900/90 p-2 text-red-500 transition hover:border-red-500"
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {totalCartItemsCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-black text-white">
+                  {totalCartItemsCount}
+                </span>
+              )}
+            </button>
+
+            <div className="hidden items-center gap-2 rounded-full border border-red-500/40 bg-zinc-900/90 px-3 py-1.5 md:flex">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-red-500/50 bg-red-500/20 text-[10px] font-bold text-red-500">!</span>
+              <span className="text-xs font-black tracking-wide text-red-500">
+                {userBalance} B9CHICH <span className="text-[11px] font-normal text-zinc-400">({userBalance} TND)</span>
+              </span>
+            </div>
+
+            <div className="hidden items-center gap-2 pl-2 md:flex">
+              <span className="text-xs font-bold text-zinc-300">{currentUser?.username || 'Guest'}</span>
+              {currentUser ? (
+                <button type="button" onClick={logoutUser} className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:bg-zinc-800">
+                  Logout
+                </button>
+              ) : (
+                <Link href="/login" className="rounded-xl bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700">
+                  Login
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* RIGHT CONTROLS */}
-        <div className="flex items-center gap-2.5 shrink-0">
-
-          <LanguageSwitcher />
-
-          {/* SEARCH BAR */}
-          <div className="relative hidden xl:block w-48">
+      {isMobileSearchOpen && (
+        <div className="fixed inset-x-0 top-[3.75rem] z-40 border-b border-zinc-800/80 bg-zinc-950/98 px-4 py-3 shadow-xl backdrop-blur-md md:hidden">
+          <div className="relative mx-auto max-w-xl">
             <input
               type="text"
-              placeholder="Search..."
+              autoFocus
+              placeholder="Search products..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-zinc-900/90 border border-red-500/40 focus:border-red-500 text-xs text-zinc-100 placeholder-zinc-500 rounded-xl pl-8 pr-3 py-1.5 outline-none transition-all"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="w-full rounded-xl border border-red-500/40 bg-zinc-900/90 py-2.5 pl-9 pr-9 text-sm text-zinc-100 outline-none transition-all placeholder-zinc-500 focus:border-red-500"
             />
-            <svg className="w-3.5 h-3.5 text-red-500 absolute left-2.5 top-2 fill-current" viewBox="0 0 24 24">
-              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
-            </svg>
+            <Search className="absolute left-3 top-3 h-4 w-4 text-red-500" />
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileSearchOpen(false);
+                setSearchQuery('');
+              }}
+              aria-label="Close search"
+              className="absolute right-2.5 top-2.5 text-zinc-500 transition hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-
-          {/* CART BUTTON */}
-          <button
-            onClick={openCart}
-            className="relative bg-zinc-900/90 border border-red-500/40 hover:border-red-500 p-2 rounded-xl text-red-500 transition"
-          >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
-            </svg>
-            {totalCartItemsCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                {totalCartItemsCount}
-              </span>
-            )}
-          </button>
-
-          {/* BALANCE BUTTON */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-zinc-900/90 border border-red-500/40 px-2.5 py-1 rounded-full">
-            <div className="w-3.5 h-3.5 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center text-[9px] font-bold border border-red-500/50">
-              !
+          {trimmedQuery && (
+            <div className="mx-auto mt-3 max-h-80 max-w-xl overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/70">
+              {searchResults.length === 0 ? (
+                <p className="px-4 py-3 text-xs text-zinc-500">No results found.</p>
+              ) : (
+                searchResults.map((product) => (
+                  <button
+                    key={`${product.brandId}-${product.id}`}
+                    type="button"
+                    onClick={() => handleSelectResult(product)}
+                    className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-xs text-zinc-200 transition hover:bg-zinc-800/80"
+                  >
+                    <img
+                      src={product.image}
+                      alt=""
+                      className="h-8 w-8 shrink-0 rounded-lg bg-zinc-900 object-cover"
+                    />
+                    <span className="truncate">{product.name}</span>
+                  </button>
+                ))
+              )}
             </div>
-            <span className="text-[11px] font-black text-red-500 tracking-wide">
-              {userBalance} B9CHICH
-            </span>
-          </div>
-
-          {/* USER */}
-          <div className="flex items-center">
-            {currentUser ? (
-              <Link href="/account" className="flex items-center gap-1.5 group">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-red-600 to-red-900 border border-red-500/50 flex items-center justify-center overflow-hidden shadow-[0_0_8px_rgba(239,68,68,0.3)] group-hover:shadow-[0_0_12px_rgba(239,68,68,0.5)] transition-all">
-                  {currentUser.avatarUrl ? (
-                    <img src={currentUser.avatarUrl} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-3.5 h-3.5 text-white" />
-                  )}
-                </div>
-                <span className="hidden 2xl:inline text-xs font-bold text-zinc-300 group-hover:text-white transition">
-                  {currentUser.username || 'Guest'}
-                </span>
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl transition"
-              >
-                Login
-              </Link>
-            )}
-          </div>
-
+          )}
         </div>
+      )}
 
-      </div>
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800/90 bg-zinc-950/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md md:hidden" aria-label="Mobile page navigation">
+        <div className="mx-auto flex max-w-md items-center justify-around">
+          {mobileLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.path}
+              className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
+                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-400 hover:text-white'
+              }`}
+            >
+              {link.icon}
+              <span>{link.name}</span>
+            </Link>
+          ))}
+          <button
+            type="button"
+            onClick={() => setIsMoreOpen((isOpen) => !isOpen)}
+            aria-expanded={isMoreOpen}
+            className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
+              isMoreOpen || moreLinks.some((link) => pathname === link.path) ? 'bg-red-500/10 text-red-500' : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            {isMoreOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span>More</span>
+          </button>
+        </div>
+      </nav>
 
-      {currentUser && <NotificationPrompt />}
-    </header>
+      {isMoreOpen && (
+        <div className="fixed bottom-[4.5rem] right-3 z-50 w-56 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl md:hidden">
+          <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Explore</p>
+          {moreLinks.map((link) => (
+            <Link
+              key={link.name}
+              href={link.path}
+              onClick={() => setIsMoreOpen(false)}
+              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
+                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+              }`}
+            >
+              {link.icon}
+              {link.name}
+            </Link>
+          ))}
+          <div className="my-1 border-t border-zinc-800" />
+          {currentUser ? (
+            <button type="button" onClick={logoutUser} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          ) : (
+            <Link href="/login" onClick={() => setIsMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
+              <LogIn className="h-4 w-4" />
+              Log in
+            </Link>
+          )}
+        </div>
+      )}
+    </>
   );
 }

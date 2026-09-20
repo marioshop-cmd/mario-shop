@@ -237,23 +237,27 @@ export default function HomePage() {
       {/* BACKGROUND GLOW */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 -z-10 h-[400px] w-[600px] bg-red-600/10 blur-[150px] rounded-full pointer-events-none" />
 
-      {/* FIXED SOCIAL BAR ON THE RIGHT */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2.5 translate-x-2 hover:translate-x-0 transition-transform duration-300 ease-out">
+      {/* FIXED SOCIAL BAR ON THE RIGHT
+          On mobile there's no hover, so the old "peek in from the edge on
+          hover" animation left these permanently half-cut-off at the
+          screen edge. Mobile now shows them fully visible (translate-x-0)
+          at a smaller size; desktop keeps the original hover-reveal peek. */}
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2 translate-x-0 md:gap-2.5 md:translate-x-2 md:hover:translate-x-0 transition-transform duration-300 ease-out">
         {/* Discord */}
-        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#5865F2] border-l-2 border-y border-zinc-800 hover:border-[#5865F2] text-zinc-400 hover:text-white p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
-          <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 127.14 96.36">
+        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#5865F2] border-l-2 border-y border-zinc-800 hover:border-[#5865F2] text-zinc-400 hover:text-white p-2.5 md:p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 md:hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
+          <svg className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 127.14 96.36">
             <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-19.32-72.1ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.31,60,73.31,53s5-12.74,11.43-12.74S96.2,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
           </svg>
         </a>
         {/* Facebook */}
-        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#1877F2] border-l-2 border-y border-zinc-800 hover:border-[#1877F2] text-zinc-400 hover:text-white p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
-          <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
+        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#1877F2] border-l-2 border-y border-zinc-800 hover:border-[#1877F2] text-zinc-400 hover:text-white p-2.5 md:p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 md:hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
+          <svg className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
           </svg>
         </a>
         {/* Instagram */}
-        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#E4405F] border-l-2 border-y border-zinc-800 hover:border-[#E4405F] text-zinc-400 hover:text-white p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
-          <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
+        <a href="#" className="group relative bg-zinc-900/90 hover:bg-[#E4405F] border-l-2 border-y border-zinc-800 hover:border-[#E4405F] text-zinc-400 hover:text-white p-2.5 md:p-3 rounded-l-2xl transition-all duration-300 ease-out shadow-xl shadow-black/60 md:hover:-translate-x-2 flex items-center justify-center backdrop-blur-md">
+          <svg className="w-4 h-4 md:w-5 md:h-5 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
           </svg>
         </a>
@@ -354,14 +358,23 @@ export default function HomePage() {
             <h2 className="text-3xl font-black tracking-tight text-white">{t('how_to_order')}</h2>
             <p className="text-zinc-500 text-sm mt-2">{t('how_to_order_sub')}</p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 relative">
             {STEPS.map((step) => (
-              <div key={step.id} className="group relative bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 p-8 rounded-3xl hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 transition duration-300">
-                <div className="absolute top-4 right-6 text-7xl font-black font-mono text-zinc-900/40 select-none group-hover:text-red-500/10 transition duration-300">{step.id}</div>
-                <span className="inline-block text-[10px] uppercase font-bold tracking-widest text-red-500 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/10 mb-6">{step.badge}</span>
-                <div className="w-12 h-12 rounded-2xl bg-zinc-900/80 flex items-center justify-center text-2xl border border-zinc-800 mb-6 shadow-inner">{step.icon}</div>
-                <h3 className="text-xl font-bold tracking-tight text-zinc-100 mb-2 group-hover:text-white transition">{t(step.titleKey)}</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">{t(step.descKey)}</p>
+              <div key={step.id} className="group relative bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 p-5 sm:p-8 rounded-2xl sm:rounded-3xl hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 transition duration-300">
+                <div className="hidden sm:block absolute top-4 right-6 text-7xl font-black font-mono text-zinc-900/40 select-none group-hover:text-red-500/10 transition duration-300">{step.id}</div>
+
+                {/* Mobile: compact badge + icon side by side */}
+                <div className="flex items-center gap-3 sm:hidden mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-zinc-900/80 flex items-center justify-center text-xl border border-zinc-800 shadow-inner shrink-0">{step.icon}</div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-red-500 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/10">{step.badge}</span>
+                </div>
+
+                {/* Desktop: original stacked badge → icon */}
+                <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest text-red-500 bg-red-500/10 px-2.5 py-1 rounded-md border border-red-500/10 mb-6">{step.badge}</span>
+                <div className="hidden sm:flex w-12 h-12 rounded-2xl bg-zinc-900/80 items-center justify-center text-2xl border border-zinc-800 mb-6 shadow-inner">{step.icon}</div>
+
+                <h3 className="text-lg sm:text-xl font-bold tracking-tight text-zinc-100 mb-1.5 sm:mb-2 group-hover:text-white transition">{t(step.titleKey)}</h3>
+                <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">{t(step.descKey)}</p>
               </div>
             ))}
           </div>
@@ -375,27 +388,44 @@ export default function HomePage() {
             <h2 className="text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">{t('payment_methods')}</h2>
             <p className="text-zinc-500 text-sm mt-2">{t('payment_methods_sub')}</p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
-            {TUNISIAN_PAYMENTS.map((payment) => (
-              <div key={payment.id} className="group relative bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-3xl p-8 transition duration-300">
-                <div className="absolute top-4 right-6 text-7xl font-black font-mono text-zinc-900/40 select-none group-hover:text-red-500/10 transition duration-300">{payment.id}</div>
-                <span className="inline-block text-[10px] uppercase font-bold tracking-widest text-zinc-400 bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-800 mb-6">{payment.badge}</span>
-                <div className="w-20 h-20 rounded-2xl bg-zinc-900/80 flex items-center justify-center border border-zinc-800 group-hover:border-red-500/40 mb-6 shadow-inner overflow-hidden p-3 transition duration-300">
-                  <img src={payment.logo} alt={payment.badge} className="w-full h-full object-contain drop-shadow-lg" />
-                </div>
-                <h3 className="text-xl font-bold tracking-tight text-zinc-100 mb-2 group-hover:text-white transition">{t(payment.titleKey)}</h3>
-                <p className="text-zinc-400 text-sm leading-relaxed">{t(payment.descKey)}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ONE BUTTON FOR ALL PAYMENT METHODS */}
-          <div className="mt-8 flex justify-center">
+          {/* ONE BUTTON FOR ALL PAYMENT METHODS — moved above the grid so
+              the flow reads: what this is → call to action → the methods
+              you can use, matching the reference layout. */}
+          <div className="mb-8 flex justify-center">
             <Link href="/add-b9chich"
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-red-500 bg-red-500/10 text-red-400 font-black tracking-wide transition duration-200 hover:bg-red-600 hover:text-white hover:shadow-lg hover:shadow-red-600/20 active:scale-95"
             >
               💰 ADD B9CHICH <span className="text-base">→</span>
             </Link>
+          </div>
+
+          {/* All payment methods now grouped into ONE compact tile grid
+              instead of three separate full-size cards — on mobile this
+              was previously three tall stacked blocks; now it's a tidy
+              2-column (3-column on larger screens) grid inside the same
+              outer container. */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
+            {TUNISIAN_PAYMENTS.map((payment) => (
+              <div
+                key={payment.id}
+                className="group flex flex-col items-center text-center gap-3 bg-zinc-900/40 border border-zinc-800/60 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl p-4 sm:p-5 transition duration-300"
+              >
+                <span className="text-[9px] uppercase font-bold tracking-widest text-zinc-500 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-zinc-800">
+                  {payment.badge}
+                </span>
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-zinc-900/80 flex items-center justify-center border border-zinc-800 group-hover:border-red-500/40 shadow-inner overflow-hidden p-2.5 transition duration-300">
+                  <img src={payment.logo} alt={payment.badge} className="w-full h-full object-contain drop-shadow-lg" />
+                </div>
+                <h3 className="text-xs sm:text-sm font-bold tracking-tight text-zinc-100 group-hover:text-white transition">
+                  {t(payment.titleKey)}
+                </h3>
+                {/* Description kept for context, just hidden on the
+                    narrowest screens to preserve the compact tile look. */}
+                <p className="hidden sm:block text-[11px] text-zinc-400 leading-snug">
+                  {t(payment.descKey)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -461,9 +491,9 @@ export default function HomePage() {
                   <span className="text-3xl sm:text-4xl font-black font-mono text-zinc-600 group-hover:text-red-500 transition-colors w-10 text-right shrink-0">
                     {index + 1}
                   </span>
-                  <span className="font-semibold text-[#b3b3b3] group-hover:text-white transition-colors text-base sm:text-lg truncate">
+                  <p className="font-semibold text-[#b3b3b3] group-hover:text-white transition-colors text-base sm:text-lg truncate">
                     {client.username}
-                  </span>
+                  </p>
                 </div>
                 
                 <div className="flex items-center gap-2 text-zinc-500 text-xs sm:text-sm font-medium shrink-0 ml-4 group-hover:text-zinc-400 transition-colors">
