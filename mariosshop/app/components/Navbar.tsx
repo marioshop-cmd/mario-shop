@@ -6,10 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   CircleHelp,
   Home,
-  LogIn,
-  LogOut,
   Mail,
-  Menu,
   Search,
   ShoppingBag,
   Store,
@@ -19,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getAllProductsFlat, onProductsChanged, type FlatProduct } from '../lib/products';
+import LanguageSwitcher from '../language/LanguageSwitcher';
 
 const navLinks = [
   { name: 'HOME', path: '/', icon: <Home className="h-4 w-4" /> },
@@ -29,12 +27,6 @@ const navLinks = [
   { name: 'FAQ', path: '/faq', icon: <CircleHelp className="h-4 w-4" /> },
 ];
 
-const mobileLinks = navLinks.slice(0, 3).map(({ name, path, icon }) => ({
-  name: name === 'MY ORDERS' ? 'Orders' : name[0] + name.slice(1).toLowerCase(),
-  path,
-  icon: React.cloneElement(icon, { className: 'h-5 w-5' }),
-}));
-
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -43,9 +35,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
   const userBalance = currentUser?.b9chich ?? 0;
-  const moreLinks = navLinks.slice(3);
 
   // Live product catalog for the search bar — pulled from the same shared
   // Supabase-backed source the Services page and admin dashboard already
@@ -121,7 +111,7 @@ export default function Navbar() {
       <header className="fixed left-0 right-0 top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/95 px-4 py-3 backdrop-blur-md md:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Mario's Shop home">
-            <span className="text-lg">🍄</span>
+            <img src="/images/logo.png" alt="" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
             <span className="text-sm font-black tracking-tight text-white sm:text-base">
               MARIO'S<span className="text-red-500">.</span>SHOP
             </span>
@@ -180,7 +170,7 @@ export default function Navbar() {
               aria-label={`Open cart${totalCartItemsCount > 0 ? `, ${totalCartItemsCount} items` : ''}`}
               className="relative rounded-xl border border-red-500/40 bg-zinc-900/90 p-2 text-red-500 transition hover:border-red-500"
             >
-              <ShoppingBag className="h-5 w-5" />
+              <span className="block text-lg leading-none" aria-hidden="true">🛒</span>
               {totalCartItemsCount > 0 && (
                 <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-black text-white">
                   {totalCartItemsCount}
@@ -188,11 +178,15 @@ export default function Navbar() {
               )}
             </button>
 
-            <div className="hidden items-center gap-2 rounded-full border border-red-500/40 bg-zinc-900/90 px-3 py-1.5 md:flex">
-              <span className="flex h-4 w-4 items-center justify-center rounded-full border border-red-500/50 bg-red-500/20 text-[10px] font-bold text-red-500">!</span>
-              <span className="text-xs font-black tracking-wide text-red-500">
-                {userBalance} B9CHICH <span className="text-[11px] font-normal text-zinc-400">({userBalance} TND)</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-red-500/40 bg-zinc-900/90 px-2 py-1 sm:gap-2 sm:px-3 sm:py-1.5">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-red-500/50 bg-red-500/20 text-[10px] font-bold text-red-500">!</span>
+              <span className="whitespace-nowrap text-[10px] font-black tracking-wide text-red-500 sm:text-xs">
+                {userBalance} B9CHICH <span className="hidden text-[11px] font-normal text-zinc-400 sm:inline">({userBalance} TND)</span>
               </span>
+            </div>
+
+            <div className="shrink-0">
+              <LanguageSwitcher />
             </div>
 
             <div className="hidden items-center gap-2 pl-2 md:flex">
@@ -261,64 +255,6 @@ export default function Navbar() {
         </div>
       )}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800/90 bg-zinc-950/95 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.35)] backdrop-blur-md md:hidden" aria-label="Mobile page navigation">
-        <div className="mx-auto flex max-w-md items-center justify-around">
-          {mobileLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.path}
-              className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
-                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              {link.icon}
-              <span>{link.name}</span>
-            </Link>
-          ))}
-          <button
-            type="button"
-            onClick={() => setIsMoreOpen((isOpen) => !isOpen)}
-            aria-expanded={isMoreOpen}
-            className={`flex min-w-[4.5rem] flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-bold transition ${
-              isMoreOpen || moreLinks.some((link) => pathname === link.path) ? 'bg-red-500/10 text-red-500' : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            {isMoreOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            <span>More</span>
-          </button>
-        </div>
-      </nav>
-
-      {isMoreOpen && (
-        <div className="fixed bottom-[4.5rem] right-3 z-50 w-56 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl md:hidden">
-          <p className="px-3 pb-2 pt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Explore</p>
-          {moreLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.path}
-              onClick={() => setIsMoreOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition ${
-                pathname === link.path ? 'bg-red-500/10 text-red-500' : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
-              }`}
-            >
-              {link.icon}
-              {link.name}
-            </Link>
-          ))}
-          <div className="my-1 border-t border-zinc-800" />
-          {currentUser ? (
-            <button type="button" onClick={logoutUser} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
-              <LogOut className="h-4 w-4" />
-              Log out
-            </button>
-          ) : (
-            <Link href="/login" onClick={() => setIsMoreOpen(false)} className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-zinc-300 transition hover:bg-zinc-800 hover:text-white">
-              <LogIn className="h-4 w-4" />
-              Log in
-            </Link>
-          )}
-        </div>
-      )}
     </>
   );
 }

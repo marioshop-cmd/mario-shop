@@ -6,6 +6,7 @@ import { AuthProvider } from "@/app/context/AuthContext";
 import { CartProvider } from "@/app/context/CartContext";
 import { LanguageProvider } from "@/app/language/LanguageContext";
 import Navbar from "./components/Navbar";
+import MobileBottomNav from "./components/MobileBottomNav";
 import Footer from "./components/Footer";
 import CartDrawer from "./components/CartDrawer";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           <AuthProvider>
             <CartProvider>
               <Navbar />
+              <MobileBottomNav />
 
               <main className="flex-1">
                 {children}

@@ -150,7 +150,7 @@ export default function MobileBottomNav() {
       >
         <div className="flex items-stretch px-1 py-1.5">
           <TabButton active={isHome} label="Home" icon={<HomeIcon />} href="/" />
-          <TabButton active={isServices} label="Services" icon={<Store className="w-5 h-5 shrink-0" />} href="/services" />
+          <TabButton active={isServices} label="Shop" icon={<Store className="w-5 h-5 shrink-0" />} href="/services" />
           <TabButton
             active={isAccount}
             label="Account"
