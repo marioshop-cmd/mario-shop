@@ -48,15 +48,36 @@ export default function Navbar() {
   const moreLinks = navLinks.slice(3);
 
   // Live product catalog for the search bar — pulled from the same shared
-  // source the Services page and admin dashboard already use, so it's
-  // never hardcoded and stays current automatically: new products,
-  // renamed products, and deleted products all reflect here with no
-  // changes needed to this file.
+  // Supabase-backed source the Services page and admin dashboard already
+  // use, so it's never hardcoded and stays current automatically: new
+  // products, renamed products, and deleted products all reflect here with
+  // no changes needed to this file.
+  //
+  // getAllProductsFlat() is async (it fetches /api/products), and
+  // onProductsChanged()'s callback fires with no data of its own — it just
+  // signals "something changed" — so each time it fires we re-fetch fresh
+  // data ourselves and only apply it if the component is still mounted.
   const [products, setProducts] = useState<FlatProduct[]>([]);
   useEffect(() => {
-    setProducts(getAllProductsFlat());
-    const unsubscribe = onProductsChanged(() => setProducts(getAllProductsFlat()));
-    return unsubscribe;
+    let isMounted = true;
+
+    const loadProducts = () => {
+      getAllProductsFlat()
+        .then((data) => {
+          if (isMounted) setProducts(data);
+        })
+        .catch((error) => {
+          console.error('Navbar search: failed to load products', error);
+        });
+    };
+
+    loadProducts();
+    const unsubscribe = onProductsChanged(loadProducts);
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const trimmedQuery = searchQuery.trim().toLowerCase();
