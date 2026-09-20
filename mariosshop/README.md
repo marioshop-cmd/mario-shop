@@ -16,6 +16,17 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Supabase catalog setup
+
+The services catalog is shared through Supabase rather than browser
+`localStorage`. Create the `site_catalog` table by running
+[`supabase/catalog.sql`](../supabase/catalog.sql) in the Supabase SQL Editor,
+then configure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+`SUPABASE_SERVICE_ROLE_KEY` from
+[`.env.example`](.env.example) in the local and Hostinger environments.
+
+The first successful catalog request seeds the existing built-in services.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

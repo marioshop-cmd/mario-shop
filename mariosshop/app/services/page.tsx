@@ -67,8 +67,13 @@ function ServicesPageInner() {
   const searchParams = useSearchParams();
   const [brands, setBrands] = useState<BrandService[]>([]);
   useEffect(() => {
-    setBrands(getAllBrands());
-    const unsubscribe = onProductsChanged(() => setBrands(getAllBrands()));
+    const refresh = () => {
+      getAllBrands().then(setBrands).catch((error: unknown) => {
+        console.error('Unable to load services:', error);
+      });
+    };
+    refresh();
+    const unsubscribe = onProductsChanged(refresh);
     return unsubscribe;
   }, []);
   const [selectedCategory, setSelectedCategory] = useState("All");
