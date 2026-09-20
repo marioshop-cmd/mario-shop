@@ -374,21 +374,62 @@ export async function decrementStock(brandId: string, productId: number, quantit
   return writeBrands(brands);
 }
 
-export function onProductsChanged(callback: () => void): () => void {
-  const client = getRealtimeClient();
-  const channel = client
-    ?.channel('site-catalog-changes')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: REALTIME_TABLE },
-      callback,
-    )
-    .subscribe();
+// Multiple components (Navbar's live search, the Services page, the admin
+// dashboard, etc.) all want to know when the catalog changes. Supabase's
+// realtime channels do NOT support attaching a new `.on()` listener to a
+// channel that has already been subscribed — attempting that throws
+// "cannot add `postgres_changes` callbacks ... after `subscribe()`" and,
+// since it's uncaught, crashes the whole page. So instead of every caller
+// creating its own channel (which breaks the instant a second caller
+// exists), we keep ONE shared channel and ONE shared 30s fallback timer,
+// and fan their events out to every registered callback.
+const changeListeners = new Set<() => void>();
+let sharedChannel: ReturnType<NonNullable<ReturnType<typeof getRealtimeClient>>['channel']> | null = null;
+let sharedInterval: number | null = null;
 
-  // Keep a fallback for deployments where Realtime has not yet been enabled.
-  const interval = window.setInterval(callback, 30000);
+function notifyAllListeners() {
+  changeListeners.forEach((listener) => listener());
+}
+
+function ensureSharedSubscription() {
+  const client = getRealtimeClient();
+  if (!client) return;
+
+  if (!sharedChannel) {
+    sharedChannel = client
+      .channel('site-catalog-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: REALTIME_TABLE },
+        notifyAllListeners,
+      )
+      .subscribe();
+  }
+
+  if (sharedInterval === null) {
+    // Keep a fallback for deployments where Realtime has not yet been enabled.
+    sharedInterval = window.setInterval(notifyAllListeners, 30000);
+  }
+}
+
+export function onProductsChanged(callback: () => void): () => void {
+  changeListeners.add(callback);
+  ensureSharedSubscription();
+
   return () => {
-    window.clearInterval(interval);
-    if (channel) void client?.removeChannel(channel);
+    changeListeners.delete(callback);
+    // Only tear down the shared channel/timer once nobody is listening
+    // anymore, so other still-mounted components keep getting updates.
+    if (changeListeners.size === 0) {
+      if (sharedInterval !== null) {
+        window.clearInterval(sharedInterval);
+        sharedInterval = null;
+      }
+      if (sharedChannel) {
+        const client = getRealtimeClient();
+        void client?.removeChannel(sharedChannel);
+        sharedChannel = null;
+      }
+    }
   };
 }
