@@ -232,6 +232,30 @@ export interface FeaturedCarouselItem {
   link: string;
 }
 
+/** Same-category products for the "Related products" rail on a product's
+ * detail page. Pure/synchronous — it takes the `brands` list the page has
+ * already loaded (via getAllBrands/onProductsChanged) instead of doing its
+ * own fetch, so opening a product never costs a second catalog round-trip.
+ * Returns the full brand + product pair (not just ids) so the caller can
+ * jump straight into that product the same way clicking a catalog card does. */
+export function getRelatedProducts(
+  brands: BrandService[],
+  category: string,
+  excludeProductId: number,
+  limit = 6
+): { brand: BrandService; product: Product }[] {
+  const related: { brand: BrandService; product: Product }[] = [];
+  for (const brand of brands) {
+    if (brand.category !== category) continue;
+    for (const product of brand.products) {
+      if (product.id === excludeProductId) continue;
+      related.push({ brand, product });
+      if (related.length >= limit) return related;
+    }
+  }
+  return related;
+}
+
 export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
   return (await readBrands()).flatMap((brand) =>
     brand.products
