@@ -562,10 +562,10 @@ export default function RefundPolicyPage() {
         {/* Bottom back link */}
         <div className="text-center pt-4">
           <Link
-            href="/support"
+            href="/contact"
             className="inline-flex items-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900 px-5 py-3 text-sm font-bold text-white hover:border-red-500/40 transition"
           >
-            Have a question about a specific order? Contact Support →
+            Have a question about a specific order? Contact us →
           </Link>
         </div>
       </div>
