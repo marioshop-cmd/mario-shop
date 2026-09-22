@@ -381,6 +381,39 @@ export async function deleteProduct(brandId: string, productId: number): Promise
 /** Reduces a product's stock count after a purchase (called from checkout).
  * Clamps at 0 so stock never goes negative even if two tabs check out at
  * the same time. Silently no-ops if the brand/product no longer exists. */
+/** Appends a customer review to a product and persists it. Returns the new
+ * review on success so the UI can show it immediately without waiting for
+ * the realtime/catalog refresh to come back around. */
+export async function addReview(
+  brandId: string,
+  productId: number,
+  input: { author: string; rating: number; comment: string }
+): Promise<Review | null> {
+  const brands = await readBrands();
+  const brandIdx = brands.findIndex((b) => b.id === brandId);
+  if (brandIdx === -1) return null;
+
+  const productIdx = brands[brandIdx].products.findIndex((p) => p.id === productId);
+  if (productIdx === -1) return null;
+
+  const newReview: Review = {
+    id: `rev-${Date.now()}`,
+    author: input.author.trim() || 'Anonymous',
+    rating: Math.min(5, Math.max(1, Math.round(input.rating))),
+    date: 'Just now',
+    comment: input.comment.trim(),
+  };
+
+  const existingReviews = brands[brandIdx].products[productIdx].reviews ?? [];
+  brands[brandIdx].products[productIdx] = {
+    ...brands[brandIdx].products[productIdx],
+    reviews: [newReview, ...existingReviews],
+  };
+
+  const saved = await writeBrands(brands);
+  return saved ? newReview : null;
+}
+
 export async function decrementStock(brandId: string, productId: number, quantity: number): Promise<boolean> {
   const brands = await readBrands();
   const brandIdx = brands.findIndex((b) => b.id === brandId);

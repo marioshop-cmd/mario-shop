@@ -5,7 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../language/LanguageContext';
 import {
+  addReview,
   getAllBrands,
+  getRelatedProducts,
   onProductsChanged,
   type BrandService,
   type Product,
@@ -90,6 +92,58 @@ function ServicesPageInner() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  // "Write a review" modal state
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewAuthor, setReviewAuthor] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+
+  // Re-fetches the catalog and, if a product is open, refreshes it with the
+  // latest data (e.g. right after a new review is added) instead of waiting
+  // for the realtime subscription to come back around.
+  const refreshCatalog = async () => {
+    try {
+      const updated = await getAllBrands();
+      setBrands(updated);
+      if (selectedBrand && selectedProduct) {
+        const freshBrand = updated.find((b) => b.id === selectedBrand.id);
+        const freshProduct = freshBrand?.products.find((p) => p.id === selectedProduct.id);
+        if (freshBrand && freshProduct) {
+          setSelectedBrand(freshBrand);
+          setSelectedProduct(freshProduct);
+        }
+      }
+    } catch (error) {
+      console.error('Unable to refresh services:', error);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedBrand || !selectedProduct) return;
+    if (!reviewComment.trim()) {
+      setReviewError('Please write a comment before submitting.');
+      return;
+    }
+    setSubmittingReview(true);
+    setReviewError("");
+    const saved = await addReview(selectedBrand.id, selectedProduct.id, {
+      author: reviewAuthor,
+      rating: reviewRating,
+      comment: reviewComment,
+    });
+    setSubmittingReview(false);
+    if (!saved) {
+      setReviewError('Something went wrong submitting your review. Please try again.');
+      return;
+    }
+    await refreshCatalog();
+    setReviewModalOpen(false);
+    setReviewAuthor("");
+    setReviewRating(5);
+    setReviewComment("");
+  };
 
   // Deep-link support: ?brandId=steam&productId=101 (e.g. from a client's
   // notification toast) jumps straight to that product's detail view
@@ -144,14 +198,7 @@ function ServicesPageInner() {
   // whenever the catalog refreshes or the viewer opens a different product.
   const relatedProducts = useMemo(() => {
     if (!selectedProduct || !selectedBrand) return [];
-    return brands
-      .filter((brand) => brand.category === selectedBrand.category)
-      .flatMap((brand) =>
-        brand.products
-          .filter((product) => product.id !== selectedProduct.id)
-          .map((product) => ({ brand, product }))
-      )
-      .slice(0, 6);
+    return getRelatedProducts(brands, selectedBrand.category, selectedProduct.id, 6);
   }, [brands, selectedBrand, selectedProduct]);
   // Add item to Cart / 9ofa — now goes through the global cart context so
   // it's available (and syncs) across every page, not just this one.
@@ -363,7 +410,7 @@ function ServicesPageInner() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">You may like</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {relatedProducts.map(({ brand, product }: { brand: BrandService; product: Product }) => (
+                {relatedProducts.map(({ brand, product }) => (
                   <div
                     key={`${brand.id}-${product.id}`}
                     onClick={() => handleOpenRelatedProduct(brand, product)}
@@ -394,7 +441,10 @@ function ServicesPageInner() {
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 <span>⭐</span> {t('customer_reviews')} ({selectedProduct.reviews?.length || 0})
               </h3>
-              <button className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-bold text-zinc-300 px-3 py-1.5 rounded-xl transition">
+              <button
+                onClick={() => setReviewModalOpen(true)}
+                className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-xs font-bold text-zinc-300 px-3 py-1.5 rounded-xl transition"
+              >
                 {t('write_a_review')}
               </button>
             </div>
@@ -676,6 +726,83 @@ function ServicesPageInner() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* WRITE A REVIEW MODAL */}
+      {reviewModalOpen && selectedProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => !submittingReview && setReviewModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-3xl p-6 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">{t('write_a_review')}</h3>
+              <button
+                onClick={() => !submittingReview && setReviewModalOpen(false)}
+                className="text-zinc-500 hover:text-white transition text-xl leading-none"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className="text-xs text-zinc-500">{selectedProduct.name}</p>
+
+            {/* Star rating picker */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Rating</label>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className={`text-2xl transition ${star <= reviewRating ? 'text-amber-400' : 'text-zinc-700'}`}
+                    aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Name (optional) */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Your name (optional)</label>
+              <input
+                type="text"
+                value={reviewAuthor}
+                onChange={(e) => setReviewAuthor(e.target.value)}
+                placeholder="Anonymous"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-red-500/50"
+              />
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Your review</label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows={4}
+                placeholder="Tell others what you thought about this product..."
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:outline-none focus:border-red-500/50 resize-none"
+              />
+            </div>
+
+            {reviewError && <p className="text-xs text-red-400">{reviewError}</p>}
+
+            <button
+              onClick={handleSubmitReview}
+              disabled={submittingReview}
+              className="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-2xl transition"
+            >
+              {submittingReview ? 'Submitting…' : 'Submit review'}
+            </button>
+          </div>
         </div>
       )}
 
