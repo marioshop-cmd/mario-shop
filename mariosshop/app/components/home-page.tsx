@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import FaqSection from './components/FaqSection';
-import FeaturedProducts from './components/FeaturedProducts';
-import { useLanguage } from './language/LanguageContext';
-import { getLeaderboard, onLeaderboardChanged, type LeaderboardEntry } from './lib/leaderboard';
-import { addHomeReview, getHomeReviews, onHomeReviewsChanged, type HomeReview } from './lib/homeReviews';
+import FaqSection from './FaqSection';
+import FeaturedProducts from './FeaturedProducts';
+import { useLanguage } from '../language/LanguageContext';
+import { getLeaderboard, onLeaderboardChanged, type LeaderboardEntry } from '../lib/leaderboard';
+import { addHomeReview, getHomeReviews, onHomeReviewsChanged, type HomeReview } from '../lib/homeReviews';
 
 // Reviews now load from the shared database (lib/homeReviews.ts) instead of
 // being seeded here — see the useEffect below.
