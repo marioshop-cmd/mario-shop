@@ -358,69 +358,61 @@ export default function DirectGridAdmin() {
 
   const displayedProducts = products.filter(p => filterCategory === "All" ? true : p.category === filterCategory);
 
+  const pendingOrders = shopOrders.filter((o) => o.status === 'Pending').length;
+  const processingOrders = shopOrders.filter((o) => o.status === 'Processing').length;
+  const completedRevenue = shopOrders
+    .filter((o) => o.status === 'Delivered')
+    .reduce((sum, o) => sum + Number(o.totalCost || 0), 0);
+  const lowStockProducts = products.filter((p) => p.stock <= 1).length;
+
   return (
     <AdminPinGate>
-    <main className="min-h-screen bg-zinc-950 text-white font-sans p-6 pt-32 space-y-12 max-w-7xl mx-auto">
-      
-      <div className="space-y-5">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight text-red-500">👑 MARIO'S CONTROL PANEL</h1>
-          <p className="text-zinc-500 text-sm mt-1">Manage your store, orders, clients and support from one place.</p>
-        </div>
-
-        {/* QUICK ACTIONS */}
-        <div className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-300">⚡ Quick Actions</h2>
-            <span className="text-[10px] text-zinc-600">Jump directly to what you need</span>
+    <main className="min-h-screen bg-[#070709] text-white font-sans px-4 pb-12 pt-24 sm:px-6 lg:px-8 lg:pt-8 space-y-8">
+      <div className="mx-auto max-w-[1500px] space-y-8">
+        <header id="overview" className="scroll-mt-24 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-red-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" /> Admin workspace
+            </div>
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">MARIO'S <span className="text-red-500">CONTROL CENTER</span></h1>
+            <p className="mt-2 max-w-2xl text-sm text-zinc-500">Everything important at a glance. Use the sidebar to jump between store operations without scrolling through one giant page.</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => { setIsAdding(true); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} className="rounded-xl bg-red-600 px-4 py-2.5 text-xs font-black transition hover:bg-red-500">+ Add Product</button>
+            <button onClick={() => router.push('/admin/balance')} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2.5 text-xs font-bold text-zinc-200 transition hover:border-red-500/40">Payments</button>
+          </div>
+        </header>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2">
-            <button
-              onClick={() => {
-                setIsAdding(true);
-                document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-3 text-xs font-black transition"
-            >
-              ➕ Add Product
-            </button>
+        <section aria-label="Dashboard overview" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+          {[
+            { label: 'Total Orders', value: shopOrders.length, meta: `${pendingOrders} pending · ${processingOrders} processing`, icon: '↗' },
+            { label: 'Delivered Revenue', value: `${completedRevenue.toFixed(2)} TND`, meta: `${shopOrders.filter((o) => o.status === 'Delivered').length} completed orders`, icon: '₮' },
+            { label: 'Products', value: products.length, meta: `${lowStockProducts} low / out of stock`, icon: '◈' },
+            { label: 'Support Tickets', value: ticketCount, meta: `${transactions.length} balance transactions`, icon: '✦' },
+          ].map((card) => (
+            <div key={card.label} className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-4 transition hover:-translate-y-0.5 hover:border-zinc-700">
+              <div className="flex items-start justify-between">
+                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">{card.label}</span>
+                <span className="text-sm text-red-400">{card.icon}</span>
+              </div>
+              <div className="mt-3 text-2xl font-black tracking-tight">{card.value}</div>
+              <div className="mt-1 text-[10px] text-zinc-600">{card.meta}</div>
+            </div>
+          ))}
+        </section>
 
-            <button
-              onClick={() => document.getElementById('orders')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 hover:border-red-500/60 px-4 py-3 text-xs font-bold text-zinc-200 transition"
-            >
-              📦 Orders ({shopOrders.length})
-            </button>
-
-            <button
-              onClick={() => document.getElementById('tickets')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 hover:border-red-500/60 px-4 py-3 text-xs font-bold text-zinc-200 transition"
-            >
-              🎫 Tickets ({ticketCount})
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/notifications')}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 hover:border-red-500/60 px-4 py-3 text-xs font-bold text-zinc-200 transition"
-            >
-              🔔 New Notification
-            </button>
-
-            <button
-              onClick={() => router.push('/admin/balance')}
-              className="rounded-xl border border-zinc-800 bg-zinc-950 hover:border-red-500/60 px-4 py-3 text-xs font-bold text-zinc-200 transition"
-            >
-              💳 Payments
-            </button>
+        <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-2 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {[['overview','Overview'],['products','Products'],['orders','Orders'],['finance','Finance'],['transactions','Transactions'],['tickets','Support']].map(([id,label]) => (
+              <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-xl bg-zinc-950 px-3 py-2 text-[11px] font-bold text-zinc-400 transition hover:text-white">{label}</a>
+            ))}
           </div>
         </div>
-      </div>
 
-      <hr className="border-zinc-900" />
+        <div className="grid grid-cols-1 gap-6">
 
       {/* SECTION 1: PRODUCT CONTROL */}
-      <section id="products" className="scroll-mt-32 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-6">
+      <section id="products" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-6 shadow-2xl shadow-black/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold">🛍️ Product Control & Edit Store</h2>
@@ -688,7 +680,7 @@ export default function DirectGridAdmin() {
       </section>
 
       {/* SECTION 2 & 3 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div id="finance" className="scroll-mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
         <section className="bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
           <div>
             <h2 className="text-xl font-bold">💰 B9CHICH Injector Management</h2>
@@ -756,7 +748,7 @@ export default function DirectGridAdmin() {
       </section>
 
       {/* SECTION 3.5: B9CHICH TRANSACTION HISTORY */}
-      <section className="bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
+      <section id="transactions" className="scroll-mt-24 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
         <div>
           <h2 className="text-2xl font-bold">💸 B9CHICH Transaction History</h2>
           <p className="text-xs text-zinc-500">
@@ -820,7 +812,7 @@ export default function DirectGridAdmin() {
       </section>
 
       {/* SECTION 4: ORDERS PIPELINE */}
-      <section id="orders" className="scroll-mt-32 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
+      <section id="orders" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-4 shadow-2xl shadow-black/10">
         <div>
           <h2 className="text-2xl font-bold">🇹🇳 Orders Management Status Pipeline</h2>
           <p className="text-xs text-zinc-500">
@@ -942,7 +934,7 @@ export default function DirectGridAdmin() {
       </section>
 
       {/* SECTION 5: SUPPORT TICKETS — full chat, right here in the dashboard */}
-      <section id="tickets" className="scroll-mt-32 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
+      <section id="tickets" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-4 shadow-2xl shadow-black/10">
         <div>
           <h2 className="text-2xl font-bold">🎫 Support Tickets</h2>
           <p className="text-xs text-zinc-500 mt-1">
@@ -953,6 +945,8 @@ export default function DirectGridAdmin() {
         <AdminTicketCenter paneHeight="min-h-[480px] max-h-[600px]" />
       </section>
 
+        </div>
+      </div>
     </main>
     </AdminPinGate>
   );
