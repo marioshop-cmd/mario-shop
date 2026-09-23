@@ -265,7 +265,7 @@ export default function DirectGridAdmin() {
   // renders the real count).
   const [ticketCount, setTicketCount] = useState(0);
   useEffect(() => {
-    setTicketCount(getAllTickets().length);
+    getAllTickets().then((tickets) => setTicketCount(tickets.length));
   }, []);
 
   // HANDLERS FOR PRODUCTS & B9CHICH
