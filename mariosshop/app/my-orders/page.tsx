@@ -199,7 +199,7 @@ export default function MyOrdersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-10 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-zinc-950 px-4 py-10 pt-28 text-white sm:px-6 sm:pt-32 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

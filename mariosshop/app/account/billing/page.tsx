@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../language/LanguageContext';
 import AccountTabs from '../../components/AccountTabs';
-import TicketThread from '../../components/TicketThread';
 import { createTicket, getTicketsByEmail, onTicketsChanged, type Ticket } from '../../lib/tickets';
 import { Wallet } from 'lucide-react';
 
 const QUICK_AMOUNTS = [10, 25, 50, 100];
+
+function TicketThread({ ticketId }: { ticketId: string }) {
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 text-xs text-zinc-400">
+      Ticket: {ticketId}
+    </div>
+  );
+}
 
 export default function BillingPage() {
   const { currentUser } = useAuth();
@@ -29,8 +36,8 @@ export default function BillingPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [viewingTicketId, setViewingTicketId] = useState<string | null>(null);
 
-  const refreshTickets = () => {
-    if (currentUser) setTickets(getTicketsByEmail(currentUser.email));
+  const refreshTickets = async () => {
+    if (currentUser) setTickets(await getTicketsByEmail(currentUser.email));
   };
 
   useEffect(() => {
@@ -48,9 +55,9 @@ export default function BillingPage() {
   const activeTicket = billingTickets.find((t) => t.status !== 'Resolved' && t.status !== 'Closed') || null;
   const pastTickets = billingTickets.filter((t) => t.id !== activeTicket?.id);
 
-  const handleRequestTopUp = () => {
+  const handleRequestTopUp = async () => {
     if (!currentUser || !amount) return;
-    const ticket = createTicket({
+    const ticket = await createTicket({
       category: 'Payment & Billing',
       subject: `Balance Top-Up Request: ${amount} B9CHICH`,
       email: currentUser.email,
@@ -121,21 +128,22 @@ export default function BillingPage() {
               ))}
             </div>
 
-            <div className="mb-4">
+            <div className="mb-1.5">
               <label className="block text-xs font-bold text-zinc-300 mb-1.5">{t('acct_custom_amount')}</label>
               <input
                 type="number"
-                min={1}
+                min={5}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                placeholder="Enter amount"
+                placeholder="Minimum 5 B9CHICH"
                 className="w-full bg-zinc-950 border border-zinc-800 focus:border-red-500 text-sm text-white rounded-xl p-3 outline-none transition"
               />
             </div>
+            <p className="text-[11px] text-zinc-500 mb-4">1 TND = 1 B9CHICH · minimum 5 B9CHICH</p>
 
             <button
               onClick={handleRequestTopUp}
-              disabled={!amount}
+              disabled={!amount || amount < 5}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] disabled:opacity-50"
             >
               {t('acct_request')} {amount || ''} B9CHICH

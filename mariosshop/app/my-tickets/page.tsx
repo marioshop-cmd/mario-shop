@@ -49,8 +49,8 @@ export default function MyTicketsPage() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
-  const refresh = useCallback(() => {
-    if (currentUser?.email) setTickets(getTicketsByEmail(currentUser.email));
+  const refresh = useCallback(async () => {
+    if (currentUser?.email) setTickets(await getTicketsByEmail(currentUser.email));
   }, [currentUser?.email]);
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function MyTicketsPage() {
   const handleSendReply = useCallback(async () => {
     if (!selectedTicket || !reply.trim()) return;
     setSending(true);
-    const updated = appendMessage(selectedTicket.id, 'client', reply);
+    const updated = await appendMessage(selectedTicket.id, 'client', reply);
     setSending(false);
     if (updated) {
       setReply('');
@@ -104,7 +104,7 @@ export default function MyTicketsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-4 py-10 text-white sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-zinc-950 px-4 py-10 pt-28 text-white sm:px-6 sm:pt-32 lg:px-8">
       <div className="mx-auto max-w-5xl space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>

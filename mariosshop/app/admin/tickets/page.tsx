@@ -60,8 +60,8 @@ export default function AdminTicketsPage() {
   const [sending, setSending] = useState(false);
   const [approveAmount, setApproveAmount] = useState<number | ''>('');
 
-  const refresh = useCallback(() => {
-    setTickets(getAllTickets());
+  const refresh = useCallback(async () => {
+    setTickets(await getAllTickets());
   }, []);
 
   useEffect(() => {
@@ -110,22 +110,22 @@ export default function AdminTicketsPage() {
     setApproveAmount(selectedTicket ? extractAmount(selectedTicket.subject) : '');
   }, [selectedTicket]);
 
-  const handleApproveBalance = useCallback(() => {
+  const handleApproveBalance = useCallback(async () => {
     if (!selectedTicket || !approveAmount) return;
     const result = addB9chich(selectedTicket.email, Number(approveAmount));
     if (!result.success) {
       alert(result.message);
       return;
     }
-    appendMessage(selectedTicket.id, 'admin', `Payment confirmed — added ${approveAmount} B9CHICH to your balance. Thanks!`);
-    updateTicketStatus(selectedTicket.id, 'Resolved');
+    await appendMessage(selectedTicket.id, 'admin', `Payment confirmed — added ${approveAmount} B9CHICH to your balance. Thanks!`);
+    await updateTicketStatus(selectedTicket.id, 'Resolved');
     refresh();
   }, [selectedTicket, approveAmount, addB9chich, refresh]);
 
   const handleSendReply = useCallback(async () => {
     if (!selectedTicket || !reply.trim()) return;
     setSending(true);
-    const updated = appendMessage(selectedTicket.id, 'admin', reply);
+    const updated = await appendMessage(selectedTicket.id, 'admin', reply);
     setSending(false);
     if (updated) {
       setReply('');
@@ -134,9 +134,9 @@ export default function AdminTicketsPage() {
   }, [selectedTicket, reply, refresh]);
 
   const handleStatusChange = useCallback(
-    (status: TicketStatus) => {
+    async (status: TicketStatus) => {
       if (!selectedTicket) return;
-      updateTicketStatus(selectedTicket.id, status);
+      await updateTicketStatus(selectedTicket.id, status);
       refresh();
     },
     [selectedTicket, refresh]
