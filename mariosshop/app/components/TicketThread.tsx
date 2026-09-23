@@ -32,8 +32,9 @@ export default function TicketThread({ ticketId }: TicketThreadProps) {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
 
-  const refresh = useCallback(() => {
-    setTicket(getTicketById(ticketId));
+  const refresh = useCallback(async () => {
+    const t = await getTicketById(ticketId);
+    setTicket(t);
   }, [ticketId]);
 
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function TicketThread({ ticketId }: TicketThreadProps) {
   const handleSend = useCallback(async () => {
     if (!message.trim()) return;
     setSending(true);
-    const updated = appendMessage(ticketId, 'client', message);
+    const updated = await appendMessage(ticketId, 'client', message);
     setSending(false);
     if (updated) {
       setMessage('');
