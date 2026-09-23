@@ -91,6 +91,7 @@ const CATEGORIES = [
 export default function DirectGridAdmin() {
   const { addB9chich } = useAuth();
   const router = useRouter();
+  const [activeSection, setActiveSection] = useState<'overview' | 'products' | 'orders' | 'finance' | 'support' | 'notifications'>('overview');
 
   // PRODUCTS — pulled from the real shared catalog (app/lib/products.ts),
   // the same one /services reads from. Adding/editing/deleting here now
@@ -358,61 +359,75 @@ export default function DirectGridAdmin() {
 
   const displayedProducts = products.filter(p => filterCategory === "All" ? true : p.category === filterCategory);
 
-  const pendingOrders = shopOrders.filter((o) => o.status === 'Pending').length;
-  const processingOrders = shopOrders.filter((o) => o.status === 'Processing').length;
-  const completedRevenue = shopOrders
-    .filter((o) => o.status === 'Delivered')
-    .reduce((sum, o) => sum + Number(o.totalCost || 0), 0);
-  const lowStockProducts = products.filter((p) => p.stock <= 1).length;
+  const deliveredOrders = shopOrders.filter((o) => o.status === 'Delivered');
+  const pendingOrders = shopOrders.filter((o) => o.status === 'Pending' || o.status === 'Processing');
+  const revenue = deliveredOrders.reduce((sum, o) => sum + o.totalCost, 0);
+  const outOfStock = products.filter((p) => p.stock <= 0).length;
+
+  const navItems = [
+    { id: 'overview' as const, label: 'Overview', icon: '⌂', desc: 'Store overview' },
+    { id: 'products' as const, label: 'Products', icon: '▣', desc: 'Catalog & stock' },
+    { id: 'orders' as const, label: 'Orders', icon: '▤', desc: 'Orders & clients', badge: shopOrders.length },
+    { id: 'finance' as const, label: 'Finance', icon: '◈', desc: 'Balance & transactions' },
+    { id: 'support' as const, label: 'Support', icon: '◉', desc: 'Tickets & messages', badge: ticketCount },
+    { id: 'notifications' as const, label: 'Notifications', icon: '◌', desc: 'Client announcements' },
+  ];
+
+  const go = (section: typeof activeSection) => {
+    setActiveSection(section);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <AdminPinGate>
-    <main className="min-h-screen bg-[#070709] text-white font-sans px-4 pb-12 pt-24 sm:px-6 lg:px-8 lg:pt-8 space-y-8">
-      <div className="mx-auto max-w-[1500px] space-y-8">
-        <header id="overview" className="scroll-mt-24 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-red-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" /> Admin workspace
+      <div className="min-h-screen bg-[#09090b] text-white font-sans">
+        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[250px] border-r border-white/[0.06] bg-[#0c0c0f] lg:flex lg:flex-col">
+          <div className="flex h-20 items-center gap-3 border-b border-white/[0.06] px-5">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-red-600 text-lg font-black shadow-lg shadow-red-600/20">M</div>
+            <div><p className="text-sm font-black tracking-wide">MARIOS SHOP</p><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Admin Panel</p></div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-5">
+            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Management</p>
+            <nav className="space-y-1">
+              {navItems.map((item) => { const active = activeSection === item.id; return (
+                <button key={item.id} onClick={() => go(item.id)} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${active ? 'bg-red-600 text-white shadow-lg shadow-red-600/10' : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'}`}>
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-sm font-black ${active ? 'bg-white/15' : 'bg-white/[0.04] text-zinc-500 group-hover:text-white'}`}>{item.icon}</span>
+                  <span className="min-w-0 flex-1"><span className="block text-xs font-black">{item.label}</span><span className={`block truncate text-[10px] ${active ? 'text-red-100' : 'text-zinc-600'}`}>{item.desc}</span></span>
+                  {item.badge !== undefined && item.badge > 0 && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${active ? 'bg-white/15' : 'bg-zinc-900 text-zinc-400'}`}>{item.badge}</span>}
+                </button>); })}
+            </nav>
+            <div className="my-6 border-t border-white/[0.06]" />
+            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">External Tools</p>
+            <div className="space-y-1">
+              <button onClick={() => router.push('/admin/balance')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">$</span><span className="text-xs font-bold">Payment Requests</span></button>
+              <button onClick={() => router.push('/admin/notifications')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">↗</span><span className="text-xs font-bold">Notification Center</span></button>
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">MARIO'S <span className="text-red-500">CONTROL CENTER</span></h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-500">Everything important at a glance. Use the sidebar to jump between store operations without scrolling through one giant page.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => { setIsAdding(true); document.getElementById('products')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} className="rounded-xl bg-red-600 px-4 py-2.5 text-xs font-black transition hover:bg-red-500">+ Add Product</button>
-            <button onClick={() => router.push('/admin/balance')} className="rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-2.5 text-xs font-bold text-zinc-200 transition hover:border-red-500/40">Payments</button>
-          </div>
+          <div className="border-t border-white/[0.06] p-4"><div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Store status</p><div className="mt-2 flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40" /><span className="text-xs font-bold text-zinc-300">Online</span></div></div></div>
+        </aside>
+
+        <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#09090b]/95 px-4 py-3 backdrop-blur-xl lg:hidden">
+          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2.5"><div className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 font-black">M</div><div><p className="text-xs font-black">MARIOS SHOP</p><p className="text-[9px] uppercase tracking-widest text-zinc-600">Admin</p></div></div><button onClick={() => router.push('/')} className="rounded-lg border border-white/[0.08] px-3 py-2 text-[10px] font-bold text-zinc-400">View Store</button></div>
+          <div className="mt-3 flex gap-1 overflow-x-auto pb-0.5">{navItems.map((item) => <button key={item.id} onClick={() => go(item.id)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[10px] font-black ${activeSection === item.id ? 'bg-red-600 text-white' : 'bg-white/[0.04] text-zinc-500'}`}>{item.icon} {item.label}{item.badge ? ` · ${item.badge}` : ''}</button>)}</div>
         </header>
 
-        <section aria-label="Dashboard overview" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-          {[
-            { label: 'Total Orders', value: shopOrders.length, meta: `${pendingOrders} pending · ${processingOrders} processing`, icon: '↗' },
-            { label: 'Delivered Revenue', value: `${completedRevenue.toFixed(2)} TND`, meta: `${shopOrders.filter((o) => o.status === 'Delivered').length} completed orders`, icon: '₮' },
-            { label: 'Products', value: products.length, meta: `${lowStockProducts} low / out of stock`, icon: '◈' },
-            { label: 'Support Tickets', value: ticketCount, meta: `${transactions.length} balance transactions`, icon: '✦' },
-          ].map((card) => (
-            <div key={card.label} className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-4 transition hover:-translate-y-0.5 hover:border-zinc-700">
-              <div className="flex items-start justify-between">
-                <span className="text-[10px] font-black uppercase tracking-[0.16em] text-zinc-500">{card.label}</span>
-                <span className="text-sm text-red-400">{card.icon}</span>
+        <main className="min-h-screen lg:ml-[250px]"><div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
+          <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-red-500">Marios Shop / Admin</p><h1 className="text-2xl font-black tracking-tight sm:text-3xl">{navItems.find((x) => x.id === activeSection)?.label}</h1><p className="mt-1 text-xs text-zinc-600">{navItems.find((x) => x.id === activeSection)?.desc}</p></div><div className="hidden items-center gap-2 sm:flex"><button onClick={() => router.push('/')} className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-2.5 text-xs font-bold text-zinc-400 hover:text-white transition">View Store ↗</button><button onClick={() => window.location.reload()} className="rounded-xl bg-white/[0.06] px-4 py-2.5 text-xs font-bold text-zinc-300 hover:bg-white/[0.1] transition">Refresh</button></div></div>
+
+          {activeSection === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">{[['Total Orders', shopOrders.length, 'all orders', 'text-white'], ['Pending', pendingOrders.length, 'need attention', 'text-amber-400'], ['Delivered Revenue', `${revenue.toFixed(2)} TND`, 'completed orders', 'text-emerald-400'], ['Products', products.length, `${outOfStock} out of stock`, 'text-sky-400']].map(([label, value, sub, color]) => <div key={String(label)} className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">{label}</p><p className={`mt-2 text-2xl font-black ${color}`}>{value}</p><p className="mt-1 text-[10px] text-zinc-600">{sub}</p></div>)}</div>
+              <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+                <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><div className="mb-5 flex items-center justify-between"><div><h2 className="text-sm font-black">Recent Orders</h2><p className="mt-1 text-[10px] text-zinc-600">Latest customer activity</p></div><button onClick={() => go('orders')} className="text-[10px] font-black text-red-400">View all →</button></div>{shopOrders.length === 0 ? <div className="rounded-xl border border-dashed border-white/[0.07] p-8 text-center text-xs text-zinc-600">No orders yet.</div> : <div className="space-y-2">{shopOrders.slice(0, 6).map((o) => <button key={o.id} onClick={() => go('orders')} className="flex w-full items-center gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3 text-left hover:bg-white/[0.04] transition"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-zinc-900 text-xs font-black text-zinc-500">#</div><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold">{o.email}</p><p className="truncate text-[10px] text-zinc-600">{o.items[0]?.productName || 'Order'} · {o.id}</p></div><div className="text-right"><p className="text-xs font-black">{o.totalCost.toFixed(2)} TND</p><p className="text-[9px] text-zinc-600">{o.status}</p></div></button>)}</div>}</section>
+                <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><h2 className="text-sm font-black">Quick Actions</h2><p className="mt-1 text-[10px] text-zinc-600">Common admin tasks</p><div className="mt-5 grid grid-cols-2 gap-2"><button onClick={() => {go('products'); setIsAdding(true)}} className="rounded-xl bg-red-600 p-3 text-left text-xs font-black hover:bg-red-500">＋ Add Product</button><button onClick={() => go('orders')} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left text-xs font-bold">▤ Orders</button><button onClick={() => go('finance')} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left text-xs font-bold">◈ Finance</button><button onClick={() => go('support')} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3 text-left text-xs font-bold">◉ Support</button></div><div className="mt-5 rounded-xl border border-amber-500/10 bg-amber-500/[0.04] p-3"><p className="text-[10px] font-black uppercase tracking-widest text-amber-400">Attention</p><p className="mt-1 text-xs text-zinc-400">{pendingOrders.length} pending orders · {ticketCount} support tickets · {outOfStock} products out of stock.</p></div></section>
               </div>
-              <div className="mt-3 text-2xl font-black tracking-tight">{card.value}</div>
-              <div className="mt-1 text-[10px] text-zinc-600">{card.meta}</div>
             </div>
-          ))}
-        </section>
+          )}
 
-        <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-2 lg:hidden">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {[['overview','Overview'],['products','Products'],['orders','Orders'],['finance','Finance'],['transactions','Transactions'],['tickets','Support']].map(([id,label]) => (
-              <a key={id} href={`#${id}`} className="whitespace-nowrap rounded-xl bg-zinc-950 px-3 py-2 text-[11px] font-bold text-zinc-400 transition hover:text-white">{label}</a>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6">
-
+          {activeSection === 'products' && (
+            <div className="space-y-6">
       {/* SECTION 1: PRODUCT CONTROL */}
-      <section id="products" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-6 shadow-2xl shadow-black/10">
+      <section id="products" className="scroll-mt-32 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold">🛍️ Product Control & Edit Store</h2>
@@ -679,140 +694,25 @@ export default function DirectGridAdmin() {
         </div>
       </section>
 
-      {/* SECTION 2 & 3 */}
-      <div id="finance" className="scroll-mt-24 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <section className="bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
-          <div>
-            <h2 className="text-xl font-bold">💰 B9CHICH Injector Management</h2>
-            <p className="text-xs text-zinc-500">Inject balance into client accounts using their registered email (1 TND = 1 B9CHICH).</p>
-          </div>
-          <div className="space-y-3">
-            <input type="email" placeholder="Target Client Email" value={targetEmail} onChange={(e) => setTargetEmail(e.target.value)} className="w-full bg-zinc-950 border border-zinc-900 p-3 rounded-xl text-sm text-white" />
-            <input type="number" placeholder="Amount (TND)" value={b9chichToAdd} onChange={(e) => setB9chichToAdd(parseInt(e.target.value) || 0)} className="w-full bg-zinc-950 border border-zinc-900 p-3 rounded-xl text-sm text-white" />
-            <button onClick={handleInjectB9chich} className="w-full bg-red-600 hover:bg-red-500 py-3 rounded-xl font-bold text-sm">Inject B9CHICH Balance 🚀</button>
-            {feedbackMsg && <div className="p-3 bg-zinc-950 border border-zinc-800 text-xs rounded-xl text-zinc-300 font-mono">{feedbackMsg}</div>}
-          </div>
-        </section>
+            </div>
+          )}
 
-        <Link
-          href="/admin/balance"
-          className="group bg-zinc-900/20 border border-zinc-900 hover:border-red-500/50 p-6 rounded-2xl space-y-4 transition flex flex-col justify-between"
-        >
-          <div>
-            <h2 className="text-xl font-bold">💳 Payment &amp; Billing</h2>
-            <p className="text-xs text-zinc-500 mt-1">Chat with clients requesting balance top-ups and approve their payments.</p>
-          </div>
-          <span className="text-xs font-bold text-red-400 group-hover:text-red-300 transition">Open dashboard →</span>
-        </Link>
 
-        <Link
-          href="/admin/notifications"
-          className="group bg-zinc-900/20 border border-zinc-900 hover:border-red-500/50 p-6 rounded-2xl space-y-4 transition flex flex-col justify-between"
-        >
-          <div>
-            <h2 className="text-xl font-bold">🔔 Client Notifications</h2>
-            <p className="text-xs text-zinc-500 mt-1">Send updates to all clients or hand-pick who hears about it, and resend anytime.</p>
-          </div>
-          <span className="text-xs font-bold text-red-400 group-hover:text-red-300 transition">Open dashboard →</span>
-        </Link>
-      </div>
+          {activeSection === 'finance' && (
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-3">
+                <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5 md:col-span-2"><div className="mb-5"><h2 className="text-sm font-black">B9CHICH Balance</h2><p className="mt-1 text-[10px] text-zinc-600">Manually add balance to a client account.</p></div><div className="grid gap-3 sm:grid-cols-[1fr_160px_auto]"><input type="email" placeholder="Client email" value={targetEmail} onChange={(e) => setTargetEmail(e.target.value)} className="min-w-0 rounded-xl border border-white/[0.07] bg-black/20 p-3 text-xs outline-none focus:border-red-500/50" /><input type="number" min="0" placeholder="Amount" value={b9chichToAdd} onChange={(e) => setB9chichToAdd(parseInt(e.target.value) || 0)} className="rounded-xl border border-white/[0.07] bg-black/20 p-3 text-xs outline-none focus:border-red-500/50" /><button onClick={handleInjectB9chich} className="rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">Inject</button></div>{feedbackMsg && <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3 text-[10px] text-zinc-400">{feedbackMsg}</div>}</section>
+                <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Transactions</p><p className="mt-2 text-3xl font-black">{transactions.length}</p><p className="mt-1 text-[10px] text-zinc-600">recorded transactions</p></div>
+              </div>
+              <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-black">Transaction History</h2><p className="mt-1 text-[10px] text-zinc-600">Balance injections and purchases.</p></div><button onClick={() => router.push('/admin/balance')} className="rounded-lg border border-white/[0.07] px-3 py-2 text-[10px] font-bold text-zinc-400">Payment Requests →</button></div><div className="overflow-x-auto rounded-xl border border-white/[0.05]"><table className="w-full min-w-[650px] text-left text-xs"><thead className="bg-white/[0.025] text-[9px] uppercase tracking-widest text-zinc-600"><tr><th className="p-3">Date</th><th className="p-3">Client</th><th className="p-3">Type</th><th className="p-3">Amount</th><th className="p-3">Balance</th><th className="p-3">Status</th></tr></thead><tbody className="divide-y divide-white/[0.04]">{transactions.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-zinc-600">No transactions yet.</td></tr> : transactions.map((t) => { const linkedOrder = t.orderId ? shopOrders.find((o) => o.id === t.orderId) : undefined; return <tr key={t.id} className="hover:bg-white/[0.02]"><td className="p-3 text-[10px] text-zinc-600">{formatTxnTime(t.createdAt)}</td><td className="p-3 font-bold">{t.email}</td><td className="p-3"><span className={`rounded-md px-2 py-1 text-[9px] font-black ${t.type === 'Injection' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-sky-500/10 text-sky-400'}`}>{t.type}</span></td><td className={`p-3 font-mono font-bold ${t.type === 'Injection' ? 'text-emerald-400' : 'text-red-400'}`}>{t.type === 'Injection' ? '+' : '-'}{t.amount}</td><td className="p-3 text-zinc-400">{t.balanceAfter}</td><td className="p-3 text-[9px] font-black uppercase text-zinc-500">{linkedOrder?.status || '—'}</td></tr>})}</tbody></table></div></section>
+              <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5 sm:max-w-2xl"><div><h2 className="text-sm font-black">Leaderboard</h2><p className="mt-1 text-[10px] text-zinc-600">Manually add +1 order to a client's ranking.</p></div><div className="mt-4 flex flex-col gap-2 sm:flex-row"><input type="email" placeholder="Client email" value={leaderboardEmail} onChange={(e) => setLeaderboardEmail(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-white/[0.07] bg-black/20 p-3 text-xs outline-none focus:border-red-500/50" /><button onClick={handleBoostLeaderboard} className="rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">+1 Order</button></div>{leaderboardMsg && <div className="mt-3 text-[10px] text-zinc-500">{leaderboardMsg}</div>}</section>
+            </div>
+          )}
 
-      {/* SECTION 2.5: LEADERBOARD ORDER BOOST */}
-      <section className="bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4 max-w-xl">
-        <div>
-          <h2 className="text-xl font-bold">🏆 Leaderboard Order Boost</h2>
-          <p className="text-xs text-zinc-500">
-            Manually add +1 order to a client's ranking in the "Top 10 Clients" section on the home page.
-          </p>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="email"
-            placeholder="Client Email"
-            value={leaderboardEmail}
-            onChange={(e) => setLeaderboardEmail(e.target.value)}
-            className="flex-1 bg-zinc-950 border border-zinc-900 p-3 rounded-xl text-sm text-white"
-          />
-          <button
-            onClick={handleBoostLeaderboard}
-            className="bg-red-600 hover:bg-red-500 px-6 py-3 rounded-xl font-bold text-sm whitespace-nowrap"
-          >
-            +1 Order 🚀
-          </button>
-        </div>
-        {leaderboardMsg && (
-          <div className="p-3 bg-zinc-950 border border-zinc-800 text-xs rounded-xl text-zinc-300 font-mono">
-            {leaderboardMsg}
-          </div>
-        )}
-      </section>
-
-      {/* SECTION 3.5: B9CHICH TRANSACTION HISTORY */}
-      <section id="transactions" className="scroll-mt-24 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold">💸 B9CHICH Transaction History</h2>
-          <p className="text-xs text-zinc-500">
-            {transactions.length} transaction{transactions.length === 1 ? '' : 's'} · every injection you make and every purchase a client completes, logged automatically.
-          </p>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-zinc-900 bg-zinc-950">
-          <table className="w-full text-left text-sm min-w-[600px]">
-            <thead>
-              <tr className="bg-zinc-900/50 text-zinc-400 text-xs border-b border-zinc-900 font-bold">
-                <th className="p-4">Date</th>
-                <th className="p-4">Client</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Amount</th>
-                <th className="p-4">Balance After</th>
-                <th className="p-4">Order Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-900">
-              {transactions.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-6 text-center text-zinc-600 text-xs">
-                    No transactions yet.
-                  </td>
-                </tr>
-              ) : (
-                transactions.map((t) => {
-                  const linkedOrder = t.orderId ? shopOrders.find((o) => o.id === t.orderId) : undefined;
-                  return (
-                    <tr key={t.id} className="hover:bg-zinc-900/20">
-                      <td className="p-4 text-xs text-zinc-500">{formatTxnTime(t.createdAt)}</td>
-                      <td className="p-4 text-xs font-bold">{t.email}</td>
-                      <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
-                          t.type === 'Injection' ? 'bg-green-500/10 text-green-400' : 'bg-sky-500/10 text-sky-400'
-                        }`}>{t.type}</span>
-                      </td>
-                      <td className={`p-4 font-mono text-xs font-bold ${t.type === 'Injection' ? 'text-green-400' : 'text-red-400'}`}>
-                        {t.type === 'Injection' ? '+' : '-'}{t.amount} B9CHICH
-                      </td>
-                      <td className="p-4 font-mono text-xs text-zinc-300">{t.balanceAfter} B9CHICH</td>
-                      <td className="p-4">
-                        {linkedOrder ? (
-                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${
-                            linkedOrder.status === 'Delivered' ? 'bg-green-500/10 text-green-400' :
-                            linkedOrder.status === 'Cancelled' ? 'bg-red-500/10 text-red-400' :
-                            linkedOrder.status === 'Processing' ? 'bg-sky-500/10 text-sky-400' :
-                            'bg-yellow-500/10 text-yellow-400'
-                          }`}>{linkedOrder.status}</span>
-                        ) : (
-                          <span className="text-[10px] text-zinc-600">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
+          {activeSection === 'orders' && (
+            <div className="space-y-6">
       {/* SECTION 4: ORDERS PIPELINE */}
-      <section id="orders" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-4 shadow-2xl shadow-black/10">
+      <section id="orders" className="scroll-mt-32 bg-zinc-900/20 border border-zinc-900 p-6 rounded-2xl space-y-4">
         <div>
           <h2 className="text-2xl font-bold">🇹🇳 Orders Management Status Pipeline</h2>
           <p className="text-xs text-zinc-500">
@@ -933,21 +833,15 @@ export default function DirectGridAdmin() {
         )}
       </section>
 
-      {/* SECTION 5: SUPPORT TICKETS — full chat, right here in the dashboard */}
-      <section id="tickets" className="scroll-mt-24 rounded-2xl border border-zinc-800/80 bg-zinc-900/30 p-4 sm:p-6 space-y-4 shadow-2xl shadow-black/10">
-        <div>
-          <h2 className="text-2xl font-bold">🎫 Support Tickets</h2>
-          <p className="text-xs text-zinc-500 mt-1">
-            {ticketCount} ticket{ticketCount === 1 ? '' : 's'} total · pick a ticket and reply directly.
-          </p>
-        </div>
 
-        <AdminTicketCenter paneHeight="min-h-[480px] max-h-[600px]" />
-      </section>
+            </div>
+          )}
 
-        </div>
+          {activeSection === 'support' && <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5"><div className="mb-5"><h2 className="text-sm font-black">Support Center</h2><p className="mt-1 text-[10px] text-zinc-600">Manage customer support tickets and replies.</p></div><AdminTicketCenter paneHeight="min-h-[500px] max-h-[700px]" /></div>}
+
+          {activeSection === 'notifications' && <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-6 text-center sm:p-10"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-red-600/10 text-2xl text-red-400">↗</div><h2 className="mt-4 text-lg font-black">Notification Center</h2><p className="mx-auto mt-2 max-w-md text-xs leading-5 text-zinc-600">Send announcements to all clients or target specific customers/products from the dedicated notification manager.</p><button onClick={() => router.push('/admin/notifications')} className="mt-6 rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">Open Notification Center →</button></div>}
+        </div></main>
       </div>
-    </main>
     </AdminPinGate>
   );
 }
