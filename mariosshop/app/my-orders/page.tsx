@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../language/LanguageContext';
+import { getTicketsByEmail, onTicketsChanged, type Ticket } from '../lib/tickets';
+import TicketThread from '../components/TicketThread';
 import {
   getOrdersByEmail,
   type Order,
@@ -149,6 +151,23 @@ export default function MyOrdersPage() {
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [sendingId, setSendingId] = useState<string | null>(null);
 
+  // B9CHICH top-up requests — same underlying data as /tickets, filtered to
+  // just the "Payment & Billing" category, shown here so a client has one
+  // place to track both real orders and balance requests.
+  const [b9chichTickets, setB9chichTickets] = useState<Ticket[]>([]);
+
+  const refreshB9chichTickets = useCallback(async () => {
+    if (!currentUser?.email) return;
+    const tickets = await getTicketsByEmail(currentUser.email);
+    setB9chichTickets(tickets.filter((t) => t.category === 'Payment & Billing'));
+  }, [currentUser?.email]);
+
+  useEffect(() => {
+    refreshB9chichTickets();
+    const unsubscribe = onTicketsChanged(refreshB9chichTickets);
+    return unsubscribe;
+  }, [refreshB9chichTickets]);
+
   const refresh = useCallback(() => {
     if (currentUser?.email) setOrders(getOrdersByEmail(currentUser.email));
   }, [currentUser?.email]);
@@ -213,6 +232,16 @@ export default function MyOrdersPage() {
             {t('browse_shop_button')}
           </Link>
         </div>
+
+        {/* B9CHICH REQUESTS — top-up tickets, shown here alongside real orders */}
+        {b9chichTickets.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">B9CHICH Requests</h2>
+            {b9chichTickets.map((ticket) => (
+              <TicketThread key={ticket.id} ticketId={ticket.id} />
+            ))}
+          </div>
+        )}
 
         {orders.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-10 text-center">

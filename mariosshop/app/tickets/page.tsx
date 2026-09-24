@@ -114,26 +114,32 @@ export default function MyTicketsPage() {
     setSubmittingTopUp(true);
     setTopUpError('');
 
-    const methodLabel = PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod;
-    const ticket = await createTicket({
-      category: 'Payment & Billing',
-      subject: `Balance Top-Up Request: ${topUpAmount} B9CHICH`,
-      email: currentUser.email,
-      firstMessage: `Hi, I'd like to add ${topUpAmount} B9CHICH (${topUpAmount} TND) to my balance via ${methodLabel}. Please send me the payment details.`,
-    });
+    try {
+      const methodLabel = PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod;
+      const ticket = await createTicket({
+        category: 'Payment & Billing',
+        subject: `Balance Top-Up Request: ${topUpAmount} B9CHICH`,
+        email: currentUser.email,
+        firstMessage: `Hi, I'd like to add ${topUpAmount} B9CHICH (${topUpAmount} TND) to my balance via ${methodLabel}. Please send me the payment details.`,
+      });
 
-    setSubmittingTopUp(false);
+      if (!ticket) {
+        setTopUpError('Something went wrong submitting your request. Please try again.');
+        return;
+      }
 
-    if (!ticket) {
-      setTopUpError('Something went wrong submitting your request. Please try again.');
-      return;
+      setTopUpAmount('');
+      setPaymentMethod('');
+      router.push('/my-orders');
+    } catch (error: unknown) {
+      console.error('Top-up request failed:', error);
+      setTopUpError(
+        error instanceof Error ? error.message : 'Something went wrong submitting your request. Please try again.'
+      );
+    } finally {
+      setSubmittingTopUp(false);
     }
-
-    setTopUpAmount('');
-    setPaymentMethod('');
-    await refresh();
-    setSelectedId(ticket.id);
-  }, [currentUser, topUpAmount, paymentMethod, refresh]);
+  }, [currentUser, topUpAmount, paymentMethod, router]);
 
   if (!currentUser) {
     return (
