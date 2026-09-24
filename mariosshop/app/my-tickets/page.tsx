@@ -6,11 +6,22 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import {
   appendMessage,
+  createTicket,
   getTicketsByEmail,
   onTicketsChanged,
   type Ticket,
   type TicketStatus,
 } from '../lib/tickets';
+
+/* -------------------------------------------------------------------------- */
+/*  Payment methods — same logo paths already used on the homepage           */
+/* -------------------------------------------------------------------------- */
+
+const PAYMENT_METHODS = [
+  { id: 'd17', label: 'D17', logo: '/payment/d17.png' },
+  { id: 'ooredoo', label: 'Ooredoo', logo: '/payment/ooredoo.png' },
+  { id: 'poste', label: 'Poste Tunisie', logo: '/payment/poste-tn.png' },
+] as const;
 
 /* -------------------------------------------------------------------------- */
 /*  Helpers                                                                   */
@@ -48,6 +59,12 @@ export default function MyTicketsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+
+  // "Add B9CHICH" request form state
+  const [topUpAmount, setTopUpAmount] = useState<number | ''>('');
+  const [paymentMethod, setPaymentMethod] = useState<string>('');
+  const [submittingTopUp, setSubmittingTopUp] = useState(false);
+  const [topUpError, setTopUpError] = useState('');
 
   const refresh = useCallback(async () => {
     if (currentUser?.email) setTickets(await getTicketsByEmail(currentUser.email));
@@ -89,6 +106,35 @@ export default function MyTicketsPage() {
     }
   }, [selectedTicket, reply, refresh]);
 
+  // Submits a "Payment & Billing" ticket with the chosen amount + payment
+  // method, then jumps straight to that ticket's thread inline — no
+  // navigation, so there's nothing that can 404.
+  const handleRequestTopUp = useCallback(async () => {
+    if (!currentUser || !topUpAmount || topUpAmount < 5 || !paymentMethod) return;
+    setSubmittingTopUp(true);
+    setTopUpError('');
+
+    const methodLabel = PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod;
+    const ticket = await createTicket({
+      category: 'Payment & Billing',
+      subject: `Balance Top-Up Request: ${topUpAmount} B9CHICH`,
+      email: currentUser.email,
+      firstMessage: `Hi, I'd like to add ${topUpAmount} B9CHICH (${topUpAmount} TND) to my balance via ${methodLabel}. Please send me the payment details.`,
+    });
+
+    setSubmittingTopUp(false);
+
+    if (!ticket) {
+      setTopUpError('Something went wrong submitting your request. Please try again.');
+      return;
+    }
+
+    setTopUpAmount('');
+    setPaymentMethod('');
+    await refresh();
+    setSelectedId(ticket.id);
+  }, [currentUser, topUpAmount, paymentMethod, refresh]);
+
   if (!currentUser) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-zinc-950 px-4 text-center text-white">
@@ -118,6 +164,57 @@ export default function MyTicketsPage() {
             + New Ticket
           </Link>
         </div>
+
+        {/* ADD B9CHICH REQUEST FORM */}
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 space-y-4">
+          <div>
+            <h2 className="text-sm font-bold text-white">Add B9CHICH</h2>
+            <p className="text-xs text-zinc-500 mt-1">1 TND = 1 B9CHICH · minimum 5 B9CHICH</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-zinc-300 mb-1.5">Amount</label>
+            <input
+              type="number"
+              min={5}
+              value={topUpAmount}
+              onChange={(e) => setTopUpAmount(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="Minimum 5 B9CHICH"
+              className="w-full bg-zinc-950 border border-zinc-800 focus:border-red-500 text-sm text-white rounded-xl p-3 outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-zinc-300 mb-2">Payment Method</label>
+            <div className="grid grid-cols-3 gap-2">
+              {PAYMENT_METHODS.map((method) => (
+                <button
+                  key={method.id}
+                  type="button"
+                  onClick={() => setPaymentMethod(method.id)}
+                  className={`flex flex-col items-center gap-2 rounded-xl border p-3 transition ${
+                    paymentMethod === method.id
+                      ? 'border-red-500 bg-red-950/20'
+                      : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'
+                  }`}
+                >
+                  <img src={method.logo} alt={method.label} className="h-8 w-auto object-contain" />
+                  <span className="text-[10px] font-bold text-zinc-300">{method.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {topUpError && <p className="text-xs text-red-400">{topUpError}</p>}
+
+          <button
+            onClick={handleRequestTopUp}
+            disabled={submittingTopUp || !topUpAmount || topUpAmount < 5 || !paymentMethod}
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] disabled:opacity-50"
+          >
+            {submittingTopUp ? 'Submitting…' : `Request ${topUpAmount || ''} B9CHICH`}
+          </button>
+        </section>
 
         {tickets.length === 0 ? (
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-10 text-center">
