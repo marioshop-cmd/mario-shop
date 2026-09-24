@@ -24,7 +24,7 @@ export default function StartChatButton({ label, className, productName, product
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!email.trim()) {
       setError('Email is required so we can reply to you.');
       return;
@@ -34,7 +34,7 @@ export default function StartChatButton({ label, className, productName, product
       ? `Hi, I'm interested in ${productName}${productRef ? ` (Ref: ${productRef})` : ''}.${name ? ` My name is ${name}.` : ''}`
       : `Hi, I couldn't find what I'm looking for.${name ? ` My name is ${name}.` : ''} Can you help me find it?`;
 
-    const ticket = createTicket({
+    const ticket = await createTicket({
       category: 'Other',
       subject,
       email: email.trim(),
