@@ -285,7 +285,7 @@ function ContactPageContent() {
       // then persist locally.
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const newTicket = createTicket({
+      const newTicket = await createTicket({
         category,
         subject,
         email,
