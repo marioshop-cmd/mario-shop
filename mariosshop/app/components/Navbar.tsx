@@ -113,9 +113,6 @@ export default function Navbar() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Mario's Shop home">
             <img src="/images/logo.png" alt="" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
-            <span className="hidden text-sm font-black tracking-tight text-white sm:inline-block sm:text-base">
-              MARIO'S<span className="text-red-500">.</span>SHOP
-            </span>
           </Link>
 
           <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
