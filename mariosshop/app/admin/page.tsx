@@ -92,6 +92,7 @@ export default function DirectGridAdmin() {
   const { addB9chich } = useAuth();
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<'overview' | 'products' | 'orders' | 'finance' | 'support' | 'notifications'>('overview');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // PRODUCTS — pulled from the real shared catalog (app/lib/products.ts),
   // the same one /services reads from. Adding/editing/deleting here now
@@ -375,43 +376,72 @@ export default function DirectGridAdmin() {
 
   const go = (section: typeof activeSection) => {
     setActiveSection(section);
+    setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
     <AdminPinGate>
       <div className="min-h-screen bg-[#09090b] text-white font-sans">
-        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[250px] border-r border-white/[0.06] bg-[#0c0c0f] lg:flex lg:flex-col">
-          <div className="flex h-20 items-center gap-3 border-b border-white/[0.06] px-5">
-            <div className="grid h-10 w-10 place-items-center rounded-xl bg-red-600 text-lg font-black shadow-lg shadow-red-600/20">M</div>
-            <div><p className="text-sm font-black tracking-wide">MARIOS SHOP</p><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Admin Panel</p></div>
+        <aside className="fixed inset-y-0 left-0 z-50 hidden w-[270px] border-r border-white/[0.06] bg-[#0b0b0e] lg:flex lg:flex-col">
+          <div className="flex h-[76px] items-center gap-3 border-b border-white/[0.06] px-5">
+            <div className="grid h-11 w-11 place-items-center rounded-xl bg-red-600 text-lg font-black shadow-lg shadow-red-600/20">M</div>
+            <div className="min-w-0"><p className="text-sm font-black tracking-wide">MARIOS SHOP</p><p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">Admin Dashboard</p></div>
           </div>
           <div className="flex-1 overflow-y-auto px-3 py-5">
-            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Management</p>
+            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Main Menu</p>
             <nav className="space-y-1">
               {navItems.map((item) => { const active = activeSection === item.id; return (
-                <button key={item.id} onClick={() => go(item.id)} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${active ? 'bg-red-600 text-white shadow-lg shadow-red-600/10' : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'}`}>
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-sm font-black ${active ? 'bg-white/15' : 'bg-white/[0.04] text-zinc-500 group-hover:text-white'}`}>{item.icon}</span>
-                  <span className="min-w-0 flex-1"><span className="block text-xs font-black">{item.label}</span><span className={`block truncate text-[10px] ${active ? 'text-red-100' : 'text-zinc-600'}`}>{item.desc}</span></span>
+                <button key={item.id} onClick={() => go(item.id)} className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition ${active ? 'bg-red-600 text-white shadow-lg shadow-red-600/15' : 'text-zinc-400 hover:bg-white/[0.04] hover:text-white'}`}>
+                  <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-black ${active ? 'bg-white/15' : 'bg-white/[0.04] text-zinc-500 group-hover:text-white'}`}>{item.icon}</span>
+                  <span className="min-w-0 flex-1"><span className="block text-xs font-black">{item.label}</span><span className={`mt-0.5 block truncate text-[10px] ${active ? 'text-red-100' : 'text-zinc-600'}`}>{item.desc}</span></span>
                   {item.badge !== undefined && item.badge > 0 && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${active ? 'bg-white/15' : 'bg-zinc-900 text-zinc-400'}`}>{item.badge}</span>}
                 </button>); })}
             </nav>
             <div className="my-6 border-t border-white/[0.06]" />
-            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">External Tools</p>
+            <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Tools</p>
             <div className="space-y-1">
-              <button onClick={() => router.push('/admin/balance')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">$</span><span className="text-xs font-bold">Payment Requests</span></button>
-              <button onClick={() => router.push('/admin/notifications')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">↗</span><span className="text-xs font-bold">Notification Center</span></button>
+              <button onClick={() => router.push('/admin/balance')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 transition hover:bg-white/[0.04] hover:text-white"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">$</span><span className="text-xs font-bold">Payment Requests</span></button>
+              <button onClick={() => router.push('/admin/notifications')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 transition hover:bg-white/[0.04] hover:text-white"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">↗</span><span className="text-xs font-bold">Notification Center</span></button>
+              <button onClick={() => router.push('/')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 transition hover:bg-white/[0.04] hover:text-white"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">↩</span><span className="text-xs font-bold">Back to Store</span></button>
             </div>
           </div>
           <div className="border-t border-white/[0.06] p-4"><div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Store status</p><div className="mt-2 flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40" /><span className="text-xs font-bold text-zinc-300">Online</span></div></div></div>
         </aside>
 
-        <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#09090b]/95 px-4 py-3 backdrop-blur-xl lg:hidden">
-          <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2.5"><div className="grid h-9 w-9 place-items-center rounded-lg bg-red-600 font-black">M</div><div><p className="text-xs font-black">MARIOS SHOP</p><p className="text-[9px] uppercase tracking-widest text-zinc-600">Admin</p></div></div><button onClick={() => router.push('/')} className="rounded-lg border border-white/[0.08] px-3 py-2 text-[10px] font-bold text-zinc-400">View Store</button></div>
-          <div className="mt-3 flex gap-1 overflow-x-auto pb-0.5">{navItems.map((item) => <button key={item.id} onClick={() => go(item.id)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-[10px] font-black ${activeSection === item.id ? 'bg-red-600 text-white' : 'bg-white/[0.04] text-zinc-500'}`}>{item.icon} {item.label}{item.badge ? ` · ${item.badge}` : ''}</button>)}</div>
+        <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#09090b]/95 px-3 py-3 backdrop-blur-xl lg:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <button onClick={() => setMobileMenuOpen(true)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-lg font-black text-zinc-200" aria-label="Open admin menu">☰</button>
+            <div className="min-w-0 flex-1 text-center"><p className="text-xs font-black">MARIOS SHOP</p><p className="text-[9px] uppercase tracking-widest text-zinc-600">{navItems.find((x) => x.id === activeSection)?.label}</p></div>
+            <button onClick={() => router.push('/')} className="rounded-xl border border-white/[0.08] px-3 py-2 text-[10px] font-bold text-zinc-400">Store ↗</button>
+          </div>
         </header>
 
-        <main className="min-h-screen lg:ml-[250px]"><div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[60] lg:hidden">
+            <button aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <aside className="relative flex h-full w-[min(86vw,330px)] flex-col border-r border-white/[0.08] bg-[#0b0b0e] shadow-2xl">
+              <div className="flex h-[76px] items-center justify-between border-b border-white/[0.06] px-5">
+                <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-red-600 font-black">M</div><div><p className="text-sm font-black">MARIOS SHOP</p><p className="text-[9px] uppercase tracking-[0.2em] text-zinc-600">Admin Dashboard</p></div></div>
+                <button onClick={() => setMobileMenuOpen(false)} className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.05] text-zinc-400">×</button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <p className="px-3 pb-2 pt-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Main Menu</p>
+                <nav className="space-y-1">{navItems.map((item) => { const active = activeSection === item.id; return <button key={item.id} onClick={() => go(item.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3.5 text-left ${active ? 'bg-red-600 text-white' : 'text-zinc-400 hover:bg-white/[0.04]'}`}><span className={`grid h-9 w-9 place-items-center rounded-lg font-black ${active ? 'bg-white/15' : 'bg-white/[0.04]'}`}>{item.icon}</span><span className="flex-1"><span className="block text-xs font-black">{item.label}</span><span className={`block text-[10px] ${active ? 'text-red-100' : 'text-zinc-600'}`}>{item.desc}</span></span>{item.badge !== undefined && item.badge > 0 && <span className="rounded-full bg-black/20 px-2 py-0.5 text-[9px] font-black">{item.badge}</span>}</button>; })}</nav>
+                <div className="my-5 border-t border-white/[0.06]" />
+                <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Tools</p>
+                <div className="space-y-1">
+                  <button onClick={() => { setMobileMenuOpen(false); router.push('/admin/balance'); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04]"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">$</span><span className="text-xs font-bold">Payment Requests</span></button>
+                  <button onClick={() => { setMobileMenuOpen(false); router.push('/admin/notifications'); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04]"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">↗</span><span className="text-xs font-bold">Notification Center</span></button>
+                  <button onClick={() => router.push('/')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04]"><span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04]">↩</span><span className="text-xs font-bold">Back to Store</span></button>
+                </div>
+              </div>
+              <div className="border-t border-white/[0.06] p-4"><div className="flex items-center gap-2 rounded-xl bg-emerald-500/5 p-3"><span className="h-2 w-2 rounded-full bg-emerald-500" /><span className="text-xs font-bold text-zinc-300">Store Online</span></div></div>
+            </aside>
+          </div>
+        )}
+
+        <main className="min-h-screen lg:ml-[270px]"><div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
           <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-red-500">Marios Shop / Admin</p><h1 className="text-2xl font-black tracking-tight sm:text-3xl">{navItems.find((x) => x.id === activeSection)?.label}</h1><p className="mt-1 text-xs text-zinc-600">{navItems.find((x) => x.id === activeSection)?.desc}</p></div><div className="hidden items-center gap-2 sm:flex"><button onClick={() => router.push('/')} className="rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-2.5 text-xs font-bold text-zinc-400 hover:text-white transition">View Store ↗</button><button onClick={() => window.location.reload()} className="rounded-xl bg-white/[0.06] px-4 py-2.5 text-xs font-bold text-zinc-300 hover:bg-white/[0.1] transition">Refresh</button></div></div>
 
           {activeSection === 'overview' && (
