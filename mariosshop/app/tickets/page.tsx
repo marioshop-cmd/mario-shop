@@ -68,7 +68,8 @@ export default function MyTicketsPage() {
   const [submittingTopUp, setSubmittingTopUp] = useState(false);
   const [topUpError, setTopUpError] = useState('');
 
-  const PRESET_AMOUNTS = [5, 10, 15, 20, 25, 50, 100];
+  const PRESET_AMOUNTS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100
+];
   const parsedAmount = Number(amountInput);
   const isValidAmount =
     amountInput.trim() !== '' && Number.isInteger(parsedAmount) && parsedAmount >= 5 && parsedAmount % 5 === 0;
