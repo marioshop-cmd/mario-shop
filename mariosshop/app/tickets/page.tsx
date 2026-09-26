@@ -60,11 +60,22 @@ export default function MyTicketsPage() {
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
 
-  // "Add B9CHICH" request form state
-  const [topUpAmount, setTopUpAmount] = useState<number | ''>('');
+  // "Add B9CHICH" request form state — presets + a validated custom input.
+  // Kept as a string so the field can show what the user actually typed
+  // (including invalid values) while validation happens separately.
+  const [amountInput, setAmountInput] = useState<string>('5');
   const [paymentMethod, setPaymentMethod] = useState<string>('');
   const [submittingTopUp, setSubmittingTopUp] = useState(false);
   const [topUpError, setTopUpError] = useState('');
+
+  const PRESET_AMOUNTS = [5, 10, 15, 20];
+  const parsedAmount = Number(amountInput);
+  const isValidAmount =
+    amountInput.trim() !== '' && Number.isInteger(parsedAmount) && parsedAmount >= 5 && parsedAmount % 5 === 0;
+  const amountValidationError =
+    amountInput.trim() !== '' && !isValidAmount
+      ? 'Tips must start at 5 and increase in multiples of 5 (e.g., 5, 10, 15, 20...).'
+      : '';
 
   const refresh = useCallback(async () => {
     if (currentUser?.email) setTickets(await getTicketsByEmail(currentUser.email));
@@ -110,7 +121,7 @@ export default function MyTicketsPage() {
   // method, then jumps straight to that ticket's thread inline — no
   // navigation, so there's nothing that can 404.
   const handleRequestTopUp = useCallback(async () => {
-    if (!currentUser || !topUpAmount || topUpAmount < 5 || !paymentMethod) return;
+    if (!currentUser || !isValidAmount || !paymentMethod) return;
     setSubmittingTopUp(true);
     setTopUpError('');
 
@@ -118,9 +129,9 @@ export default function MyTicketsPage() {
       const methodLabel = PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label ?? paymentMethod;
       const ticket = await createTicket({
         category: 'Payment & Billing',
-        subject: `Balance Top-Up Request: ${topUpAmount} B9CHICH`,
+        subject: `Balance Top-Up Request: ${parsedAmount} B9CHICH`,
         email: currentUser.email,
-        firstMessage: `Hi, I'd like to add ${topUpAmount} B9CHICH (${topUpAmount} TND) to my balance via ${methodLabel}. Please send me the payment details.`,
+        firstMessage: `Hi, I'd like to add ${parsedAmount} B9CHICH (${parsedAmount} TND) to my balance via ${methodLabel}. Please send me the payment details.`,
       });
 
       if (!ticket) {
@@ -128,7 +139,7 @@ export default function MyTicketsPage() {
         return;
       }
 
-      setTopUpAmount('');
+      setAmountInput('5');
       setPaymentMethod('');
       router.push('/my-orders');
     } catch (error: unknown) {
@@ -139,7 +150,7 @@ export default function MyTicketsPage() {
     } finally {
       setSubmittingTopUp(false);
     }
-  }, [currentUser, topUpAmount, paymentMethod, router]);
+  }, [currentUser, isValidAmount, parsedAmount, paymentMethod, router]);
 
   if (!currentUser) {
     return (
@@ -180,14 +191,40 @@ export default function MyTicketsPage() {
 
           <div>
             <label className="block text-xs font-bold text-zinc-300 mb-1.5">Amount</label>
+
+            <div className="flex flex-wrap gap-2 mb-2">
+              {PRESET_AMOUNTS.map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setAmountInput(String(val))}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold border transition ${
+                    Number(amountInput) === val && isValidAmount
+                      ? 'bg-red-600 border-red-500 text-white'
+                      : 'bg-zinc-950 border-zinc-800 text-zinc-300 hover:border-zinc-700'
+                  }`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
+
             <input
               type="number"
+              step={5}
               min={5}
-              value={topUpAmount}
-              onChange={(e) => setTopUpAmount(e.target.value === '' ? '' : Number(e.target.value))}
-              placeholder="Minimum 5 B9CHICH"
-              className="w-full bg-zinc-950 border border-zinc-800 focus:border-red-500 text-sm text-white rounded-xl p-3 outline-none transition"
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
+              placeholder="Custom amount"
+              className={`w-full bg-zinc-950 border text-sm text-white rounded-xl p-3 outline-none transition ${
+                amountValidationError ? 'border-red-500' : 'border-zinc-800 focus:border-red-500'
+              }`}
             />
+            {amountValidationError ? (
+              <p className="mt-1.5 text-[11px] text-red-400">{amountValidationError}</p>
+            ) : (
+              <p className="mt-1.5 text-[11px] text-zinc-500">1 TND = 1 B9CHICH · minimum 5, in steps of 5</p>
+            )}
           </div>
 
           <div>
@@ -215,10 +252,10 @@ export default function MyTicketsPage() {
 
           <button
             onClick={handleRequestTopUp}
-            disabled={submittingTopUp || !topUpAmount || topUpAmount < 5 || !paymentMethod}
+            disabled={submittingTopUp || !isValidAmount || !paymentMethod}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black text-xs uppercase tracking-wider transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] disabled:opacity-50"
           >
-            {submittingTopUp ? 'Submitting…' : `Request ${topUpAmount || ''} B9CHICH`}
+            {submittingTopUp ? 'Submitting…' : `Request ${isValidAmount ? parsedAmount : ''} B9CHICH`}
           </button>
         </section>
 
