@@ -68,7 +68,7 @@ export default function MyTicketsPage() {
   const [submittingTopUp, setSubmittingTopUp] = useState(false);
   const [topUpError, setTopUpError] = useState('');
 
-  const PRESET_AMOUNTS = [5, 10, 15, 20];
+  const PRESET_AMOUNTS = [5, 10, 15, 20, 25, 50, 100];
   const parsedAmount = Number(amountInput);
   const isValidAmount =
     amountInput.trim() !== '' && Number.isInteger(parsedAmount) && parsedAmount >= 5 && parsedAmount % 5 === 0;
@@ -78,7 +78,12 @@ export default function MyTicketsPage() {
       : '';
 
   const refresh = useCallback(async () => {
-    if (currentUser?.email) setTickets(await getTicketsByEmail(currentUser.email));
+    if (!currentUser?.email) return;
+    const all = await getTicketsByEmail(currentUser.email);
+    // This page is dedicated to B9CHICH top-up requests only — general
+    // support tickets (Order Issue, Refund Request, etc.) live on
+    // /my-tickets instead, so they never show up mixed in here.
+    setTickets(all.filter((t) => t.category === 'Payment & Billing'));
   }, [currentUser?.email]);
 
   useEffect(() => {

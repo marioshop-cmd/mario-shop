@@ -424,7 +424,7 @@ export default function HomePage() {
               the flow reads: what this is → call to action → the methods
               you can use, matching the reference layout. */}
           <div className="mb-8 flex justify-center">
-            <Link href="/add-b9chich"
+            <Link href="/tickets"
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-red-500 bg-red-500/10 text-red-400 font-black tracking-wide transition duration-200 hover:bg-red-600 hover:text-white hover:shadow-lg hover:shadow-red-600/20 active:scale-95"
             >
               💰 ADD B9CHICH <span className="text-base">→</span>
