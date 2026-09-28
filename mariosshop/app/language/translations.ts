@@ -150,14 +150,17 @@ export const translations: Record<string, Record<Language, string>> = {
   },
   code_problems_item1: { tn: 'الكود متاعي ما يخدمش', en: "My code doesn't work", fr: 'Mon code ne fonctionne pas' },
   code_problems_item2: { tn: 'الكود يقول مستعمل من قبل', en: 'Code says already redeemed', fr: 'Le code indique déjà utilisé' },
+  code_problems_item3: { tn: 'ما وصلنيش الكود بعد الخلاص', en: "I didn't receive my code after paying", fr: "Je n'ai pas reçu mon code après paiement" },
  
   payment_billing_title: { tn: 'الدفع و الفاتورة', en: 'Payment & Billing', fr: 'Paiement & Facturation' },
   payment_billing_sub: {
-    tn: 'الدفع ما مشاش، ',
-    en: 'Payment failures, ',
-    fr: 'Échecs de paiement, ',
+    tn: 'الدفع ما مشاش، الفلوس تحاسبت غالط، ولا الرصيد ما تزادش',
+    en: 'Payment failures, wrong charges, and balance issues',
+    fr: 'Échecs de paiement, montants erronés et problèmes de solde',
   },
   payment_billing_item1: { tn: 'الدفع رفضوه', en: 'Payment was declined', fr: 'Paiement refusé' },
+  payment_billing_item2: { tn: 'خلصت ولكن الرصيد ما تزادش', en: "I paid but my balance wasn't added", fr: "J'ai payé mais mon solde n'a pas été ajouté" },
+  payment_billing_item3: { tn: 'تحاسبت بمبلغ غالط', en: 'I was charged the wrong amount', fr: 'J\u2019ai été facturé du mauvais montant' },
 
   refunds_returns_title: { tn: 'استرجاع الفلوس', en: 'Refunds & Returns', fr: 'Remboursements & Retours' },
   refunds_returns_sub: {
