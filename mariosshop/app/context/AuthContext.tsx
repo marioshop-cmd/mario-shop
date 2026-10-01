@@ -20,6 +20,10 @@ export interface User {
   wallet?: number;
   totalReferralEarnings?: number;
   firstPurchaseCompleted?: boolean;
+
+  phone?: string;
+  recoveryEmail?: string;
+  avatarUrl?: string;
 }
 
 interface AuthContextType {
@@ -39,6 +43,10 @@ interface AuthContextType {
   addB9chich: (clientEmail: string, dinarAmount: number) => Promise<{ success: boolean; message: string }>;
   removeB9chich: (clientEmail: string, dinarAmount: number) => Promise<{ success: boolean; message: string }>;
   spendB9chich: (dinarAmount: number) => Promise<{ success: boolean; message: string }>;
+  // Profile edits. They update the session instantly (so the UI reacts
+  // right away) and save to the shared account directory in the background.
+  updateProfile: (changes: { username?: string; avatarUrl?: string }) => { success: boolean; message: string };
+  updateSecurityInfo: (changes: { recoveryEmail?: string; phone?: string }) => { success: boolean; message: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -341,6 +349,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   };
 
+  // Shared helper for updateProfile / updateSecurityInfo.
+  const applyProfileChanges = (changes: Partial<User>): { success: boolean; message: string } => {
+    if (!currentUser) {
+      return { success: false, message: 'You must be logged in.' };
+    }
+
+    // Drop undefined values so they never overwrite existing data.
+    const cleanChanges: Partial<User> = {};
+    (Object.keys(changes) as (keyof User)[]).forEach((key) => {
+      if (changes[key] !== undefined) {
+        (cleanChanges as any)[key] = changes[key];
+      }
+    });
+
+    if (cleanChanges.username !== undefined && !cleanChanges.username.trim()) {
+      return { success: false, message: 'Name cannot be empty.' };
+    }
+
+    const email = currentUser.email.toLowerCase();
+    const updatedSession: User = { ...currentUser, ...cleanChanges };
+    setCurrentUser(updatedSession);
+    localStorage.setItem('currentUser', JSON.stringify(updatedSession));
+
+    // Save to the shared directory without blocking the UI.
+    (async () => {
+      try {
+        const existingUsers = await readAccounts();
+        const updatedUsers = existingUsers.map((u: any) =>
+          u.email.toLowerCase() === email ? { ...u, ...cleanChanges } : u
+        );
+        await writeAccounts(updatedUsers);
+      } catch (e) {
+        console.error('Failed to save profile changes', e);
+      }
+    })();
+
+    return { success: true, message: 'Profile updated.' };
+  };
+
+  const updateProfile = (changes: { username?: string; avatarUrl?: string }) => applyProfileChanges(changes);
+
+  const updateSecurityInfo = (changes: { recoveryEmail?: string; phone?: string }) => applyProfileChanges(changes);
+
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -353,7 +404,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       resetPasswordWithCode,
       addB9chich,
       removeB9chich,
-      spendB9chich
+      spendB9chich,
+      updateProfile,
+      updateSecurityInfo
     }}>
       {children}
     </AuthContext.Provider>
