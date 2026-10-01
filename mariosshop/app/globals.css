@@ -5,8 +5,6 @@
   --foreground: #171717;
 }
 
-/* Tailwind CSS v4 at-rule; ignored by generic CSS linters. */
-/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -22,37 +20,46 @@
 }
 
 body {
-  background-color: #05050a;
-  background-image: url('/images/site-bg.jpg');
-  background-size: cover;
-  background-position: center bottom;
-  /* Fixed so the image stays put behind the content while the page
-     scrolls, instead of scrolling away with it. */
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* `background-attachment: fixed` is unreliable on mobile browsers
-   (iOS Safari in particular) — instead of scrolling normally, the image
-   often fails to paint at all, leaving only the flat #05050a fallback
-   color behind the content. Below the tablet breakpoint we switch to
-   `scroll`, which mobile browsers render correctly; the image still
-   covers the full page, it just moves with the content instead of
-   staying pinned. Desktop keeps the original fixed/parallax behavior. */
-@media (max-width: 767px) {
-  body {
-    background-attachment: scroll;
-  }
+/* ===== Reviews marquee (one line, moves left to right) ===== */
+.reviews-marquee {
+  overflow: hidden;
+  width: 100%;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
 }
 
-/* Nearly every page on the site paints its own fully opaque bg-zinc-950
-   background on top of <body>, which would otherwise hide the image
-   completely. Rather than editing every single page file, this one
-   override makes every use of that exact Tailwind class slightly
-   see-through instead — the starfield background now shows through
-   consistently everywhere it's used, with no other visual changes. */
-.bg-zinc-950 {
-  background-color: rgba(9, 9, 11, 0.88) !important;
+.reviews-track {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  width: max-content;
+  animation: reviews-scroll-right 40s linear infinite;
+}
+
+.reviews-marquee:hover .reviews-track {
+  animation-play-state: paused;
+}
+
+.reviews-track .review-card {
+  flex: 0 0 300px;
+}
+
+/* moves from left to right */
+@keyframes reviews-scroll-right {
+  from { transform: translateX(-50%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reviews-track { animation: none; }
+}
+
+@media (max-width: 767px) {
+  .reviews-track .review-card { flex: 0 0 260px; }
+  .reviews-track { animation-duration: 30s; }
 }

@@ -114,7 +114,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // The real checkout: works from the floating cart button on ANY page, not
   // just /services. Spends the real balance, records the order, sends the
   // client to My Orders — or shows the insufficient-balance modal on failure.
-  const checkout = useCallback(() => {
+  const checkout = useCallback(async () => {
     if (cart.length === 0) return;
 
     if (!currentUser) {
@@ -123,7 +123,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const result = spendB9chich(totalCartCost);
+    const result = await spendB9chich(totalCartCost);
 
     if (!result.success) {
       setCheckoutMessage(result.message);

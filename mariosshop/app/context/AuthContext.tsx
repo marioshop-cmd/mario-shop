@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { logTransaction } from '../lib/transactions';
+import { requestAuthCode, verifyAuthCode } from '../lib/authCodes';
 
 export interface User {
   username: string;
@@ -10,58 +11,75 @@ export interface User {
   isAdmin?: boolean;
   b9chich: number;
 
+  country?: string;
+  region?: string | null;
+
   referralCode?: string;
   referredBy?: string | null;
 
   wallet?: number;
   totalReferralEarnings?: number;
   firstPurchaseCompleted?: boolean;
-
-  // Account recovery / security info — separate from the login email so
-  // changing it never breaks orders/transactions, which are keyed by the
-  // original login email.
-  recoveryEmail?: string;
-  phone?: string;
-
-  // Profile picture, stored as a data URL. Fine for small photos; if you
-  // later add real file uploads, swap this for a hosted image URL instead.
-  avatarUrl?: string;
 }
-
-// A pending password-reset code, stored separately from the user record.
-interface PasswordResetRequest {
-  email: string;
-  code: string;
-  expiresAt: number; // epoch ms
-}
-
 
 interface AuthContextType {
   currentUser: User | null;
-  registerUser: (newUser: Omit<User, 'b9chich'> & { password: string }) => { success: boolean; error?: string };
-  loginUser: (email: string, password: string) => { success: boolean; error?: string };
+  registerUser: (newUser: Omit<User, 'b9chich'> & { password: string }) => Promise<{ success: boolean; error?: string }>;
+  // loginUser only checks the email/password — it does NOT log anyone in.
+  // On success it returns the matched account; the caller must then get the
+  // 2FA code verified and call completeLogin() to actually start the
+  // session. This split is what makes 2FA possible: nothing about "being
+  // logged in" happens until the code is confirmed.
+  loginUser: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  completeLogin: (user: User) => void;
   logoutUser: () => void;
-  addB9chich: (clientEmail: string, dinarAmount: number) => { success: boolean; message: string };
-  spendB9chich: (dinarAmount: number) => { success: boolean; message: string };
-
-  // Profile / security
-  updateProfile: (updates: { username?: string; avatarUrl?: string }) => { success: boolean; message: string };
-  updateSecurityInfo: (updates: { recoveryEmail?: string; phone?: string }) => { success: boolean; message: string };
-  changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
-
-  // Forgot password
   requestPasswordResetCode: (email: string) => Promise<{ success: boolean; message: string; devCode?: string }>;
-  verifyPasswordResetCode: (email: string, code: string) => { success: boolean; message: string };
-  resetPasswordWithCode: (email: string, code: string, newPassword: string) => { success: boolean; message: string };
+  verifyPasswordResetCode: (email: string, code: string) => Promise<{ success: boolean; message: string }>;
+  resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+  addB9chich: (clientEmail: string, dinarAmount: number) => Promise<{ success: boolean; message: string }>;
+  removeB9chich: (clientEmail: string, dinarAmount: number) => Promise<{ success: boolean; message: string }>;
+  spendB9chich: (dinarAmount: number) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+/* -------------------------------------------------------------------------- */
+/*  Shared account directory — every registered user, persisted in Supabase   */
+/*  instead of localStorage, so an admin (or anyone) sees the same account    */
+/*  list no matter which browser/device they're on. This was the cause of    */
+/*  "No registered client found" errors: the admin's own browser had never   */
+/*  seen an account that was created somewhere else.                        */
+/* -------------------------------------------------------------------------- */
+
+async function readAccounts(): Promise<any[]> {
+  const response = await fetch('/api/user-accounts', { cache: 'no-store' });
+  const parsed: unknown = await response.json();
+  if (!response.ok) {
+    const details =
+      parsed && typeof parsed === 'object' && 'details' in parsed
+        ? String((parsed as { details: unknown }).details)
+        : 'Unknown server error';
+    throw new Error(`Unable to load accounts: ${details}`);
+  }
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+async function writeAccounts(users: any[]): Promise<boolean> {
+  const response = await fetch('/api/user-accounts', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(users),
+  });
+  return response.ok;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Load active user session on startup
+    // Load active user session on startup — this stays in localStorage on
+    // purpose: it's just "who is logged in on this browser right now", not
+    // the shared account directory.
     const savedSession = localStorage.getItem('currentUser');
     if (savedSession) {
       try {
@@ -74,8 +92,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const registerUser = (newUser: Omit<User, 'b9chich'> & { password: string }) => {
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
+  const registerUser = async (newUser: Omit<User, 'b9chich'> & { password: string }) => {
+    const existingUsers = await readAccounts();
 
     const exists = existingUsers.some((u: any) => u.email.toLowerCase() === newUser.email.toLowerCase());
     if (exists) {
@@ -90,7 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const userToSave = { ...newUser, referralCode, b9chich: 0 };
     existingUsers.push(userToSave);
-    localStorage.setItem('mario_users', JSON.stringify(existingUsers));
+    const saved = await writeAccounts(existingUsers);
+    if (!saved) {
+      return { success: false, error: 'Something went wrong creating your account. Please try again.' };
+    }
 
     // Carry every field from the saved account into the session (minus the
     // password) instead of a hand-picked whitelist — this is what was
@@ -102,14 +123,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   };
 
-  const loginUser = (email: string, password: string) => {
+  const loginUser = async (email: string, password: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
+    const existingUsers = await readAccounts();
 
     // Check Shop Admin Account
     if (cleanEmail === "mariosshop@fgmail.com" && password === "marionsh") {
       const adminInDb = existingUsers.find((u: any) => u.email.toLowerCase() === cleanEmail);
-      
+
       const adminSession: User = {
         username: "Shop Admin",
         email: "mariosshop@fgmail.com",
@@ -123,9 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         totalReferralEarnings: 0,
         firstPurchaseCompleted: true
       };
-      localStorage.setItem('currentUser', JSON.stringify(adminSession));
-      setCurrentUser(adminSession);
-      return { success: true };
+      // No session is started here — the caller still needs to get the
+      // 2FA code verified and call completeLogin(adminSession).
+      return { success: true, user: adminSession };
     }
 
     // Check Client Account
@@ -142,19 +163,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const healedUsers = existingUsers.map((u: any) =>
           u.email.toLowerCase() === cleanEmail ? { ...u, referralCode: matchedUser.referralCode } : u
         );
-        localStorage.setItem('mario_users', JSON.stringify(healedUsers));
+        await writeAccounts(healedUsers);
       }
 
       // Same fix as registerUser: carry the full stored record into the
       // session instead of just username/email/dob/isAdmin/b9chich.
       const { password: _password, ...sessionData } = matchedUser;
       if (sessionData.b9chich === undefined) sessionData.b9chich = 0;
-      localStorage.setItem('currentUser', JSON.stringify(sessionData));
-      setCurrentUser(sessionData);
-      return { success: true };
+      // Credentials are correct, but the session does NOT start yet — the
+      // caller still needs the 2FA code verified first.
+      return { success: true, user: sessionData as User };
     }
 
     return { success: false, error: 'Invalid email or password.' };
+  };
+
+  // Actually starts the session. Only call this after the 2FA code has
+  // been verified — this is the one place `currentUser`/localStorage gets
+  // set for a fresh login (registerUser still logs in immediately, since
+  // account creation itself is the trusted action there).
+  const completeLogin = (user: User) => {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    setCurrentUser(user);
   };
 
   const logoutUser = () => {
@@ -162,69 +192,124 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(null);
   };
 
-  // 1. ADMIN INJECT B9CHICH BY EMAIL
-  const addB9chich = (clientEmail: string, dinarAmount: number) => {
+  // FORGOT PASSWORD FLOW — same auth_codes system as register/login 2FA,
+  // just with purpose 'reset'.
+  const requestPasswordResetCode = async (email: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const existingUsers = await readAccounts();
+    const exists = existingUsers.some((u: any) => u.email.toLowerCase() === cleanEmail);
+    if (!exists) {
+      return { success: false, message: 'No account found with that email.' };
+    }
+
+    const result = await requestAuthCode(cleanEmail, 'reset');
+    if (!result.success) {
+      return { success: false, message: result.message || 'Could not send the reset code. Please try again.' };
+    }
+    return { success: true, message: 'Code sent.', devCode: result.devCode };
+  };
+
+  // Single-use: a successful verify consumes the code server-side. The
+  // actual password change below trusts that this step already happened
+  // (it doesn't re-verify), so step 3 doesn't get blocked by its own code
+  // already being spent here.
+  const verifyPasswordResetCode = async (email: string, code: string) => {
+    const result = await verifyAuthCode(email.trim().toLowerCase(), code.trim(), 'reset');
+    return result.success
+      ? { success: true, message: '' }
+      : { success: false, message: result.message || 'Incorrect code.' };
+  };
+
+  const resetPasswordWithCode = async (email: string, _code: string, newPassword: string) => {
+    const cleanEmail = email.trim().toLowerCase();
+    const existingUsers = await readAccounts();
+    const idx = existingUsers.findIndex((u: any) => u.email.toLowerCase() === cleanEmail);
+    if (idx === -1) {
+      return { success: false, message: 'No account found with that email.' };
+    }
+
+    existingUsers[idx] = { ...existingUsers[idx], password: newPassword };
+    const saved = await writeAccounts(existingUsers);
+    if (!saved) {
+      return { success: false, message: 'Something went wrong saving your new password. Please try again.' };
+    }
+    return { success: true, message: 'Password reset successfully.' };
+  };
+
+  // Shared helper for both addB9chich and removeB9chich — same lookup,
+  // same session sync, only the sign of the change differs.
+  const adjustB9chich = async (clientEmail: string, dinarAmount: number, direction: 1 | -1) => {
     const cleanEmail = clientEmail.trim().toLowerCase();
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    
+    const existingUsers = await readAccounts();
+
     let clientFound = false;
+    let newBalance = 0;
 
     const updatedUsers = existingUsers.map((user: any) => {
       if (user.email.toLowerCase() === cleanEmail) {
         clientFound = true;
         const currentBalance = Number(user.b9chich || 0);
-        const addedAmount = Number(dinarAmount);
-        return { ...user, b9chich: currentBalance + addedAmount };
+        const delta = Number(dinarAmount) * direction;
+        // Never let a deduction push a balance below 0.
+        newBalance = Math.max(0, currentBalance + delta);
+        return { ...user, b9chich: newBalance };
       }
       return user;
     });
 
     if (!clientFound) {
-      return { 
-        success: false, 
-        message: `❌ Error: No registered client found with email: ${clientEmail}` 
+      return {
+        success: false,
+        message: `❌ Error: No registered client found with email: ${clientEmail}`,
       };
     }
 
-    // Write updated users array to database
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
+    const saved = await writeAccounts(updatedUsers);
+    if (!saved) {
+      return { success: false, message: '❌ Error: Something went wrong saving the balance change. Please try again.' };
+    }
 
-    const newBalance = updatedUsers.find((u: any) => u.email.toLowerCase() === cleanEmail)?.b9chich ?? 0;
     logTransaction({
       email: cleanEmail,
-      type: 'Injection',
+      type: direction === 1 ? 'Injection' : 'Deduction',
       amount: Number(dinarAmount),
       balanceAfter: newBalance,
-      note: 'Admin balance top-up',
+      note: direction === 1 ? 'Admin balance top-up' : 'Admin balance deduction',
     });
 
-    // Update session state instantly if target is active session
+    // Update session state instantly if target is the active session.
     if (currentUser && currentUser.email.toLowerCase() === cleanEmail) {
-      const updatedSession = { 
-        ...currentUser, 
-        b9chich: Number(currentUser.b9chich || 0) + Number(dinarAmount) 
-      };
+      const updatedSession = { ...currentUser, b9chich: newBalance };
       setCurrentUser(updatedSession);
       localStorage.setItem('currentUser', JSON.stringify(updatedSession));
     }
 
-    return { 
-      success: true, 
-      message: `🎉 Success! Added ${dinarAmount} TND (${dinarAmount} B9CHICH) to ${clientEmail}` 
+    return {
+      success: true,
+      message:
+        direction === 1
+          ? `🎉 Success! Added ${dinarAmount} TND (${dinarAmount} B9CHICH) to ${clientEmail}`
+          : `✅ Removed ${dinarAmount} B9CHICH from ${clientEmail}. New balance: ${newBalance} B9CHICH`,
     };
   };
 
-  // 2. REAL SPEND B9CHICH SYSTEM
-  const spendB9chich = (dinarAmount: number) => {
+  // ADMIN: ADD B9CHICH BY EMAIL
+  const addB9chich = (clientEmail: string, dinarAmount: number) => adjustB9chich(clientEmail, dinarAmount, 1);
+
+  // ADMIN: REMOVE B9CHICH BY EMAIL — clamped so a balance never goes negative.
+  const removeB9chich = (clientEmail: string, dinarAmount: number) => adjustB9chich(clientEmail, dinarAmount, -1);
+
+  // REAL SPEND B9CHICH SYSTEM
+  const spendB9chich = async (dinarAmount: number) => {
     if (!currentUser) {
       return { success: false, message: 'You must be logged in to make a purchase.' };
     }
 
     const price = Number(dinarAmount);
     if (currentUser.b9chich < price) {
-      return { 
-        success: false, 
-        message: `Insufficient B9CHICH! You have ${currentUser.b9chich} B9CHICH (${currentUser.b9chich} TND), but need ${price} B9CHICH.` 
+      return {
+        success: false,
+        message: `Insufficient B9CHICH! You have ${currentUser.b9chich} B9CHICH (${currentUser.b9chich} TND), but need ${price} B9CHICH.`
       };
     }
 
@@ -233,14 +318,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCurrentUser(updatedSession);
     localStorage.setItem('currentUser', JSON.stringify(updatedSession));
 
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
+    const existingUsers = await readAccounts();
     const updatedUsers = existingUsers.map((u: any) => {
       if (u.email.toLowerCase() === currentUser.email.toLowerCase()) {
         return { ...u, b9chich: newBalance };
       }
       return u;
     });
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
+    await writeAccounts(updatedUsers);
 
     logTransaction({
       email: currentUser.email,
@@ -250,180 +335,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       note: 'Shop checkout',
     });
 
-    return { 
-      success: true, 
-      message: `Purchase successful! Spent ${price} B9CHICH (${price} TND). Remaining balance: ${newBalance} B9CHICH.` 
+    return {
+      success: true,
+      message: `Purchase successful! Spent ${price} B9CHICH (${price} TND). Remaining balance: ${newBalance} B9CHICH.`
     };
-  };
-
-  // 3a. UPDATE PROFILE (display name) — separate from updateSecurityInfo so
-  // the "Full Name" field on the Profile tab actually persists; previously
-  // there was no function that saved it at all, so it reset on refresh.
-  const updateProfile = (updates: { username?: string; avatarUrl?: string }) => {
-    if (!currentUser) {
-      return { success: false, message: 'You must be logged in.' };
-    }
-
-    const updatedSession = { ...currentUser, ...updates };
-    setCurrentUser(updatedSession);
-    localStorage.setItem('currentUser', JSON.stringify(updatedSession));
-
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    const updatedUsers = existingUsers.map((u: any) =>
-      u.email.toLowerCase() === currentUser.email.toLowerCase() ? { ...u, ...updates } : u
-    );
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
-
-    return { success: true, message: 'Profile updated.' };
-  };
-
-  // 3. UPDATE SECURITY INFO (recovery email / phone) — does NOT touch the
-  // login email, so orders/transactions (keyed by login email) stay intact.
-  const updateSecurityInfo = (updates: { recoveryEmail?: string; phone?: string }) => {
-    if (!currentUser) {
-      return { success: false, message: 'You must be logged in.' };
-    }
-
-    const updatedSession = { ...currentUser, ...updates };
-    setCurrentUser(updatedSession);
-    localStorage.setItem('currentUser', JSON.stringify(updatedSession));
-
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    const updatedUsers = existingUsers.map((u: any) =>
-      u.email.toLowerCase() === currentUser.email.toLowerCase() ? { ...u, ...updates } : u
-    );
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
-
-    return { success: true, message: 'Security info updated.' };
-  };
-
-  // 4. CHANGE PASSWORD (requires current password)
-  const changePassword = (currentPassword: string, newPassword: string) => {
-    if (!currentUser) {
-      return { success: false, message: 'You must be logged in.' };
-    }
-
-    if (newPassword.length < 6) {
-      return { success: false, message: 'New password must be at least 6 characters.' };
-    }
-
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    const cleanEmail = currentUser.email.toLowerCase();
-    const storedUser = existingUsers.find((u: any) => u.email.toLowerCase() === cleanEmail);
-
-    if (!storedUser || storedUser.password !== currentPassword) {
-      return { success: false, message: 'Current password is incorrect.' };
-    }
-
-    const updatedUsers = existingUsers.map((u: any) =>
-      u.email.toLowerCase() === cleanEmail ? { ...u, password: newPassword } : u
-    );
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
-
-    return { success: true, message: 'Password changed successfully.' };
-  };
-
-  // 5. FORGOT PASSWORD — step 1: generate & email a 6-digit code.
-  //
-  // The code is stored locally (same as before) but now also sent for
-  // real via /api/send-reset-email (which talks to Resend server-side).
-  // If that send fails for any reason, we still hand back devCode so the
-  // flow doesn't dead-end — the UI shows it on-screen as a fallback.
-  const RESET_STORAGE_KEY = 'mario_password_resets';
-
-  const requestPasswordResetCode = async (email: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    const userExists = existingUsers.some((u: any) => u.email.toLowerCase() === cleanEmail);
-
-    if (!userExists) {
-      return { success: false, message: 'No account found with that email.' };
-    }
-
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const request: PasswordResetRequest = {
-      email: cleanEmail,
-      code,
-      expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-    };
-
-    const allRequests: PasswordResetRequest[] = JSON.parse(localStorage.getItem(RESET_STORAGE_KEY) || '[]');
-    const filtered = allRequests.filter((r) => r.email !== cleanEmail);
-    filtered.push(request);
-    localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(filtered));
-
-    try {
-      const res = await fetch('/api/send-reset-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cleanEmail, code }),
-      });
-      if (!res.ok) throw new Error('send failed');
-      return { success: true, message: 'Check your email for the code.' };
-    } catch {
-      // Email service unreachable/misconfigured — fall back to on-screen
-      // code so testing still works instead of hard-failing.
-      return { success: true, message: 'Reset code generated (email could not be sent).', devCode: code };
-    }
-  };
-
-  // 6. FORGOT PASSWORD — step 2: verify the code the user typed in.
-  const verifyPasswordResetCode = (email: string, code: string) => {
-    const cleanEmail = email.trim().toLowerCase();
-    const allRequests: PasswordResetRequest[] = JSON.parse(localStorage.getItem(RESET_STORAGE_KEY) || '[]');
-    const request = allRequests.find((r) => r.email === cleanEmail);
-
-    if (!request) {
-      return { success: false, message: 'No reset request found. Please request a new code.' };
-    }
-    if (Date.now() > request.expiresAt) {
-      return { success: false, message: 'This code has expired. Please request a new one.' };
-    }
-    if (request.code !== code.trim()) {
-      return { success: false, message: 'Incorrect code.' };
-    }
-
-    return { success: true, message: 'Code verified.' };
-  };
-
-  // 7. FORGOT PASSWORD — step 3: set the new password (re-checks the code
-  // one more time so this can't be called without a valid verification).
-  const resetPasswordWithCode = (email: string, code: string, newPassword: string) => {
-    const verification = verifyPasswordResetCode(email, code);
-    if (!verification.success) return verification;
-
-    if (newPassword.length < 6) {
-      return { success: false, message: 'New password must be at least 6 characters.' };
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const existingUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-    const updatedUsers = existingUsers.map((u: any) =>
-      u.email.toLowerCase() === cleanEmail ? { ...u, password: newPassword } : u
-    );
-    localStorage.setItem('mario_users', JSON.stringify(updatedUsers));
-
-    // Clear the used reset request so the code can't be reused.
-    const allRequests: PasswordResetRequest[] = JSON.parse(localStorage.getItem(RESET_STORAGE_KEY) || '[]');
-    localStorage.setItem(RESET_STORAGE_KEY, JSON.stringify(allRequests.filter((r) => r.email !== cleanEmail)));
-
-    return { success: true, message: 'Password reset successfully. You can now log in.' };
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      currentUser, 
-      registerUser, 
-      loginUser, 
-      logoutUser, 
-      addB9chich, 
-      spendB9chich,
-      updateProfile,
-      updateSecurityInfo,
-      changePassword,
+    <AuthContext.Provider value={{
+      currentUser,
+      registerUser,
+      loginUser,
+      completeLogin,
+      logoutUser,
       requestPasswordResetCode,
       verifyPasswordResetCode,
       resetPasswordWithCode,
+      addB9chich,
+      removeB9chich,
+      spendB9chich
     }}>
       {children}
     </AuthContext.Provider>

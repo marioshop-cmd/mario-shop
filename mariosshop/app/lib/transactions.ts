@@ -4,7 +4,7 @@
  * full audit trail instead of just the current balance.
  */
 
-export type TransactionType = 'Injection' | 'Purchase';
+export type TransactionType = 'Injection' | 'Deduction' | 'Purchase';
 
 export interface Transaction {
   id: string;

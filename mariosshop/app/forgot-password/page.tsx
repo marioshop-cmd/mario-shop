@@ -35,7 +35,6 @@ export default function ForgotPasswordPage() {
     setSubmitting(true);
     const result = await requestPasswordResetCode(email.trim());
     setSubmitting(false);
-    alert('DEBUG result: ' + JSON.stringify(result)); // TEMP — remove after debugging
 
     if (!result.success) {
       setError(result.message);
@@ -57,7 +56,7 @@ export default function ForgotPasswordPage() {
 
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 300));
-    const result = verifyPasswordResetCode(email.trim(), code.trim());
+    const result = await verifyPasswordResetCode(email.trim(), code.trim());
     setSubmitting(false);
 
     if (!result.success) {
@@ -83,7 +82,7 @@ export default function ForgotPasswordPage() {
 
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 300));
-    const result = resetPasswordWithCode(email.trim(), code.trim(), newPassword);
+    const result = await resetPasswordWithCode(email.trim(), code.trim(), newPassword);
     setSubmitting(false);
 
     if (!result.success) {

@@ -1,19 +1,9 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff } from 'lucide-react';
-import { useLanguage } from '../language/LanguageContext';
-
-function generateReferralCode(existingUsers: any[]) {
-  let code = '';
-
-  do {
-    code = Math.random().toString(36).substring(2, 8).toUpperCase();
-  } while (existingUsers.some((u) => u.referralCode === code));
-
-  return code;
-}
+import { useAuth } from '../context/AuthContext';
+import { requestAuthCode, verifyAuthCode } from '../lib/authCodes';
 
 const COUNTRIES = [
   'Tunisia',
@@ -52,10 +42,10 @@ const TUNISIA_REGIONS = [
   'Kébili',
 ];
 
-function RegisterPageContent() {
+export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { registerUser } = useAuth();
 
   const referralCodeFromUrl = searchParams.get('ref');
 
@@ -64,8 +54,14 @@ function RegisterPageContent() {
   const [country, setCountry] = useState('');
   const [region, setRegion] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Post-registration email verification
+  const [step, setStep] = useState<'form' | 'code'>('form');
+  const [code, setCode] = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendNotice, setResendNotice] = useState('');
 
   const isTunisia = country === 'Tunisia';
 
@@ -75,100 +71,153 @@ function RegisterPageContent() {
     if (value !== 'Tunisia') setRegion('');
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
     const cleanEmail = email.trim().toLowerCase();
 
     if (!cleanEmail || !username.trim() || !country || !password) {
-      setError(t('err_register_fields'));
+      setError('Please fill in all fields.');
       return;
     }
 
     if (isTunisia && !region) {
-      setError(t('err_register_region'));
+      setError('Please select your region.');
       return;
     }
 
-    const existingUsers = JSON.parse(
-      localStorage.getItem('mario_users') || '[]'
-    );
-
-    const userExists = existingUsers.some(
-      (u: any) => u.email === cleanEmail
-    );
-
-    if (userExists) {
-      setError(t('err_register_exists'));
-      return;
-    }
-
-    const myReferralCode = generateReferralCode(existingUsers);
-
-    const referredBy =
-      referralCodeFromUrl &&
-      existingUsers.find(
-        (u: any) => u.referralCode === referralCodeFromUrl
-      )
-        ? referralCodeFromUrl
-        : null;
-
-    const newUser = {
+    setSubmitting(true);
+    const result = await registerUser({
       email: cleanEmail,
       username: username.trim(),
       country,
       region: isTunisia ? region : null,
       password,
       isAdmin: false,
-
-      referralCode: myReferralCode,
-      referredBy: referredBy,
-
+      referredBy: referralCodeFromUrl || null,
       wallet: 1,
       totalReferralEarnings: 0,
-      firstPurchaseCompleted: false
-    };
+      firstPurchaseCompleted: false,
+    });
+    setSubmitting(false);
 
-    existingUsers.push(newUser);
+    if (!result.success) {
+      setError(result.error || 'Something went wrong creating your account. Please try again.');
+      return;
+    }
 
-    localStorage.setItem(
-      'mario_users',
-      JSON.stringify(existingUsers)
-    );
+    // Account is created — now require email verification before sending
+    // them into the shop.
+    const codeResult = await requestAuthCode(cleanEmail, 'register');
+    if (!codeResult.success) {
+      setError(codeResult.message || 'Account created, but we could not send the verification code. You can request a new one below.');
+    }
+    setStep('code');
+  };
 
-    localStorage.setItem(
-      'currentUser',
-      JSON.stringify({
-        ...newUser
-      })
-    );
+  const handleVerifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
 
-    window.dispatchEvent(new Event('authChange'));
+    if (!code.trim()) {
+      setError('Please enter the code from your email.');
+      return;
+    }
+
+    setSubmitting(true);
+    const result = await verifyAuthCode(email.trim().toLowerCase(), code.trim(), 'register');
+    setSubmitting(false);
+
+    if (!result.success) {
+      setError(result.message || 'Incorrect code.');
+      return;
+    }
 
     router.push('/');
   };
 
-  return (
-    <div className="relative min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6 overflow-hidden">
-      {/* Soft glowing shapes behind the card — creates the frosted-glass
-          depth effect since the card itself uses backdrop-blur. */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-red-900/20 blur-3xl" />
+  const handleResend = async () => {
+    setResending(true);
+    setResendNotice('');
+    const result = await requestAuthCode(email.trim().toLowerCase(), 'register');
+    setResending(false);
+    setResendNotice(result.success ? 'A new code has been sent.' : result.message || 'Could not resend the code.');
+  };
 
-      <div className="auth-card-in relative bg-zinc-900/60 border border-zinc-800 rounded-3xl p-8 max-w-md w-full space-y-6 shadow-2xl backdrop-blur-xl">
+  if (step === 'code') {
+    return (
+      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 max-w-md w-full space-y-6 shadow-2xl">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-black text-red-500">Check Your Email</h1>
+            <p className="text-xs text-zinc-400">
+              We sent a 6-digit code to {email.trim().toLowerCase()}.
+            </p>
+          </div>
+
+          <form onSubmit={handleVerifyCode} className="space-y-4">
+            <div>
+              <label className="text-xs text-zinc-400 font-bold block mb-1">6-digit code</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                autoComplete="one-time-code"
+                placeholder="123456"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                disabled={submitting}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-center text-lg tracking-[0.5em] font-bold text-white focus:border-red-500 outline-none disabled:opacity-50"
+              />
+            </div>
+
+            {error && (
+              <p className="text-xs text-red-500 font-bold text-center bg-red-950/40 border border-red-500/30 p-2.5 rounded-xl">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting || code.length !== 6}
+              className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-red-600/20 disabled:opacity-60"
+            >
+              {submitting ? 'Verifying…' : 'Verify & Continue'}
+            </button>
+
+            <div className="text-center space-y-1">
+              {resendNotice && <p className="text-[11px] text-zinc-500">{resendNotice}</p>}
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending}
+                className="text-[11px] font-semibold text-red-400 hover:underline disabled:opacity-50"
+              >
+                {resending ? 'Sending…' : "Didn't get it? Resend code"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center p-6">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 max-w-md w-full space-y-6 shadow-2xl">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-black text-red-500">
-            {t('create_account_title')}
+            Create Account 🍄
           </h1>
 
           <p className="text-xs text-zinc-400">
-            {t('create_account_subtitle')}
+            Register once to access Mario's Shop anytime.
           </p>
 
           {referralCodeFromUrl && (
             <div className="mt-3 rounded-xl bg-green-900/20 border border-green-600 p-3 text-xs text-green-400 font-bold">
-              {t('referral_join_msg')}
+              🎉 You're joining through a referral invitation.
             </div>
           )}
         </div>
@@ -176,7 +225,7 @@ function RegisterPageContent() {
         <form onSubmit={handleRegister} className="space-y-4">
           <div>
             <label className="text-xs text-zinc-400 font-bold block mb-1">
-              {t('email_address_label')}
+              Email Address
             </label>
 
             <input
@@ -184,39 +233,42 @@ function RegisterPageContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="client@gmail.com"
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none"
+              disabled={submitting}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none disabled:opacity-50"
               required
             />
           </div>
 
           <div>
             <label className="text-xs text-zinc-400 font-bold block mb-1">
-              {t('username_label')}
+              Username
             </label>
 
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('username_placeholder')}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none"
+              placeholder="MarioGamer"
+              disabled={submitting}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none disabled:opacity-50"
               required
             />
           </div>
 
           <div>
             <label className="text-xs text-zinc-400 font-bold block mb-1">
-              {t('country_label')}
+              Country
             </label>
 
             <select
               value={country}
               onChange={(e) => handleCountryChange(e.target.value)}
-              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none"
+              disabled={submitting}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none disabled:opacity-50"
               required
             >
               <option value="" disabled>
-                {t('select_country_placeholder')}
+                Select your country
               </option>
               {COUNTRIES.map((c) => (
                 <option key={c} value={c}>
@@ -230,17 +282,18 @@ function RegisterPageContent() {
           {isTunisia && (
             <div>
               <label className="text-xs text-zinc-400 font-bold block mb-1">
-                {t('region_label')}
+                Region
               </label>
 
               <select
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none"
+                disabled={submitting}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none disabled:opacity-50"
                 required
               >
                 <option value="" disabled>
-                  {t('select_region_placeholder')}
+                  Select your region
                 </option>
                 {TUNISIA_REGIONS.map((r) => (
                   <option key={r} value={r}>
@@ -253,27 +306,18 @@ function RegisterPageContent() {
 
           <div>
             <label className="text-xs text-zinc-400 font-bold block mb-1">
-              {t('password_label')}
+              Password
             </label>
 
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 pr-11 text-sm text-white focus:border-red-500 outline-none"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              disabled={submitting}
+              className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-red-500 outline-none disabled:opacity-50"
+              required
+            />
           </div>
 
           {error && (
@@ -284,33 +328,13 @@ function RegisterPageContent() {
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-red-600/20"
+            disabled={submitting}
+            className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-red-600/20 disabled:opacity-60"
           >
-            {t('register_button')}
+            {submitting ? 'Creating account…' : 'Register & Continue'}
           </button>
         </form>
       </div>
-
-      <style jsx>{`
-        @keyframes authCardIn {
-          from { opacity: 0; transform: translateY(12px) scale(0.98); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .auth-card-in {
-          animation: authCardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .auth-card-in { animation: none !important; }
-        }
-      `}</style>
     </div>
-  );
-}
-
-export default function RegisterPage() {
-  return (
-    <Suspense fallback={null}>
-      <RegisterPageContent />
-    </Suspense>
   );
 }
