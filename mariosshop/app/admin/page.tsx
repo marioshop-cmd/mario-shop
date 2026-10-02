@@ -345,13 +345,13 @@ export default function DirectGridAdmin() {
     }
   };
 
-  const handleInjectB9chich = () => {
+  const handleInjectB9chich = async () => {
     if (!targetEmail.trim()) {
       return setFeedbackMsg("⚠️ Please enter a target client email!");
     }
-    const res = addB9chich(targetEmail.trim(), b9chichToAdd);
-    setFeedbackMsg(res.message);
-    if (res.success) {
+    const res = await addB9chich(targetEmail.trim(), b9chichToAdd);
+setFeedbackMsg(res.message);
+if (res.success) {
       setTargetEmail("");
       setTransactions(getAllTransactions());
     }
