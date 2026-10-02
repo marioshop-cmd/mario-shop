@@ -68,7 +68,7 @@ export default function SecurityPage() {
 
     setSavingPassword(true);
     await new Promise((r) => setTimeout(r, 200));
-    const result = changePassword(currentPassword, newPassword);
+    const result = await changePassword(currentPassword, newPassword);
     setSavingPassword(false);
 
     setPasswordMessage({ type: result.success ? 'success' : 'error', text: result.message });

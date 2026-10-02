@@ -47,6 +47,7 @@ interface AuthContextType {
   // right away) and save to the shared account directory in the background.
   updateProfile: (changes: { username?: string; avatarUrl?: string }) => { success: boolean; message: string };
   updateSecurityInfo: (changes: { recoveryEmail?: string; phone?: string }) => { success: boolean; message: string };
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -392,6 +393,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateSecurityInfo = (changes: { recoveryEmail?: string; phone?: string }) => applyProfileChanges(changes);
 
+  // Unlike updateProfile/updateSecurityInfo above, this can't be "fire and
+  // forget" — it has to actually check the current password against the
+  // shared account directory before allowing the change, so it's properly
+  // async and the caller must await it.
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!currentUser) {
+      return { success: false, message: 'You must be logged in.' };
+    }
+    if (newPassword.length < 6) {
+      return { success: false, message: 'New password must be at least 6 characters.' };
+    }
+
+    const email = currentUser.email.toLowerCase();
+    const existingUsers = await readAccounts();
+    const idx = existingUsers.findIndex((u: any) => u.email.toLowerCase() === email);
+
+    if (idx === -1) {
+      return { success: false, message: 'Account not found.' };
+    }
+    if (existingUsers[idx].password !== currentPassword) {
+      return { success: false, message: 'Current password is incorrect.' };
+    }
+
+    existingUsers[idx] = { ...existingUsers[idx], password: newPassword };
+    const saved = await writeAccounts(existingUsers);
+    if (!saved) {
+      return { success: false, message: 'Something went wrong saving your new password. Please try again.' };
+    }
+
+    return { success: true, message: 'Password updated successfully.' };
+  };
+
   return (
     <AuthContext.Provider value={{
       currentUser,
@@ -406,7 +439,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeB9chich,
       spendB9chich,
       updateProfile,
-      updateSecurityInfo
+      updateSecurityInfo,
+      changePassword
     }}>
       {children}
     </AuthContext.Provider>
