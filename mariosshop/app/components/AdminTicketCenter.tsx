@@ -108,9 +108,9 @@ export default function AdminTicketCenter({
     setApproveAmount(selectedTicket ? extractAmount(selectedTicket.subject) : '');
   }, [selectedTicket]);
 
-  const handleApproveBalance = useCallback(async () => {
-    if (!selectedTicket || !approveAmount) return;
-    const result = addB9chich(selectedTicket.email, Number(approveAmount));
+ const handleApproveBalance = useCallback(async () => {
+  if (!selectedTicket || !approveAmount) return;
+  const result = await addB9chich(selectedTicket.email, Number(approveAmount));
     if (!result.success) {
       alert(result.message);
       return;
