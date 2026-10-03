@@ -199,7 +199,28 @@ async function readBrands(): Promise<BrandService[]> {
   return SEED_BRANDS;
 }
 
+// The Navbar search, the featured carousel and the services page all ask for
+// the whole catalog at about the same moment. Instead of downloading it once
+// per component, they share one request for a few seconds. Anything that
+// WRITES (add/update/delete/review/stock) still reads fresh with readBrands(),
+// and every write or change event clears this cache.
+const BRANDS_CACHE_MS = 5000;
+let brandsCache: { at: number; promise: Promise<BrandService[]> } | null = null;
+
+function readBrandsCached(): Promise<BrandService[]> {
+  if (brandsCache && Date.now() - brandsCache.at < BRANDS_CACHE_MS) {
+    return brandsCache.promise;
+  }
+  const promise = readBrands();
+  brandsCache = { at: Date.now(), promise };
+  promise.catch(() => {
+    if (brandsCache && brandsCache.promise === promise) brandsCache = null;
+  });
+  return promise;
+}
+
 async function writeBrands(brands: BrandService[]): Promise<boolean> {
+  brandsCache = null;
   const response = await fetch('/api/products', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -209,13 +230,13 @@ async function writeBrands(brands: BrandService[]): Promise<boolean> {
 }
 
 export async function getAllBrands(): Promise<BrandService[]> {
-  return readBrands();
+  return readBrandsCached();
 }
 
 /** Flattens every brand's products into one row-per-product list — what the
  * admin's simple product table works with. */
 export async function getAllProductsFlat(): Promise<FlatProduct[]> {
-  return (await readBrands()).flatMap((brand) =>
+  return (await readBrandsCached()).flatMap((brand) =>
     brand.products.map((p) => ({ ...p, category: brand.category, brandId: brand.id }))
   );
 }
@@ -256,19 +277,33 @@ export function getRelatedProducts(
   return related;
 }
 
+/** The price shown on the carousel. If the product's own price has no number
+ * in it (empty, or just "DT"), fall back to its cheapest variant's price. */
+function carouselPrice(product: Product): string {
+  const hasNumber = (value: string) => /\d/.test(value || '');
+  if (hasNumber(product.price)) return product.price;
+
+  const withNumbers = (product.variants ?? []).filter((v) => hasNumber(v.price));
+  if (withNumbers.length > 0) {
+    const toNumber = (value: string) => parseFloat(value.replace(',', '.').replace(/[^\d.]/g, ''));
+    return withNumbers.reduce((cheapest, v) => (toNumber(v.price) < toNumber(cheapest.price) ? v : cheapest)).price;
+  }
+  return product.price;
+}
+
 export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
-  return (await readBrands()).flatMap((brand) =>
+  return (await readBrandsCached()).flatMap((brand) =>
     brand.products
       .filter((p) => p.featured)
       .map((p) => ({
         id: String(p.id),
         publisher: brand.name.toUpperCase(),
         title: p.name,
-        price: p.price,
+        price: carouselPrice(p),
         image: p.image,
-        // Individual products aren't deep-linkable to their own URL yet —
-        // this sends people to browse services generally.
-        link: '/services',
+        // Opens the services page on this exact product: the services page reads
+        // ?brandId= and ?productId= from the address and jumps straight to it.
+        link: `/services?brandId=${encodeURIComponent(brand.id)}&productId=${p.id}`,
       }))
   );
 }
@@ -445,6 +480,7 @@ let sharedChannel: ReturnType<NonNullable<ReturnType<typeof getRealtimeClient>>[
 let sharedInterval: number | null = null;
 
 function notifyAllListeners() {
+  brandsCache = null;
   changeListeners.forEach((listener) => listener());
 }
 
@@ -465,7 +501,9 @@ function ensureSharedSubscription() {
 
   if (sharedInterval === null) {
     // Keep a fallback for deployments where Realtime has not yet been enabled.
-    sharedInterval = window.setInterval(notifyAllListeners, 30000);
+    sharedInterval = window.setInterval(() => {
+      if (!document.hidden) notifyAllListeners();
+    }, 30000);
   }
 }
 

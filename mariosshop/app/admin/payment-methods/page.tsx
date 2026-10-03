@@ -125,7 +125,10 @@ export default function AdminPaymentMethodsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage({ type: 'error', text: data?.error || 'Could not add the payment method.' });
+        setMessage({
+          type: 'error',
+          text: `${data?.error || 'Could not add the payment method.'}${data?.details ? ` (${data.details})` : ''}`,
+        });
       } else {
         setMessage({ type: 'success', text: `${data.name} added.` });
         setName('');

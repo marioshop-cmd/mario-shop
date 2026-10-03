@@ -99,7 +99,10 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Failed to add payment method:', error);
-      return NextResponse.json({ error: 'Could not save the payment method.' }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Could not save the payment method.', details: error.message },
+        { status: 500 },
+      );
     }
     return NextResponse.json(data);
   } catch (err) {
