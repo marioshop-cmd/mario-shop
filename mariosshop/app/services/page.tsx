@@ -207,6 +207,7 @@ function ServicesPageInner() {
     const selectedVariant = selectedProduct.variants?.find(v => v.id === selectedVariantId);
     const priceString = selectedVariant ? selectedVariant.price : selectedProduct.price;
     const priceNumeric = parsePrice(priceString);
+    if (priceNumeric <= 0) return; // no price set yet — never add a free item
     const cartItemId = `${selectedProduct.id}-${selectedVariantId || 'default'}`;
     addToCart({
       cartItemId,
@@ -222,6 +223,17 @@ function ServicesPageInner() {
     // drawer that's already wired up site-wide.
     openCart();
   };
+  // Price of what is currently selected (variant if there is one), as a number.
+  const currentPriceNumeric = selectedProduct
+    ? parsePrice(
+        selectedProduct.variants && selectedProduct.variants.length > 0
+          ? selectedProduct.variants.find((v) => v.id === selectedVariantId)?.price ||
+              selectedProduct.variants[0]?.price ||
+              ''
+          : selectedProduct.price || ''
+      )
+    : 0;
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans">
       <div className="p-6 pt-24 max-w-7xl mx-auto space-y-8 relative">
@@ -343,15 +355,22 @@ function ServicesPageInner() {
 
                 {/* CHANGED BUTTON: "7AT FEL 9OFA 🧺" */}
                 <button
+                  type="button"
                   onClick={handleAddToCart}
-                  disabled={selectedProduct.stock <= 0}
-                  className={`w-full py-4 font-black text-sm rounded-2xl transition shadow-xl flex items-center justify-center gap-2 ${
-                    selectedProduct.stock > 0
-                      ? 'bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white shadow-red-600/20 cursor-pointer'
-                      : 'bg-zinc-800 text-zinc-500 cursor-not-allowed shadow-none'
+                  disabled={selectedProduct.stock <= 0 || currentPriceNumeric <= 0}
+                  className={`w-full py-4 font-black text-sm rounded-2xl border transition shadow-xl flex items-center justify-center gap-2 ${
+                    selectedProduct.stock > 0 && currentPriceNumeric > 0
+                      ? 'bg-red-600 hover:bg-red-500 active:scale-[0.98] border-red-400/40 text-white shadow-red-600/30 cursor-pointer'
+                      : 'bg-zinc-800 border-zinc-700 text-zinc-500 cursor-not-allowed shadow-none'
                   }`}
                 >
-                  <span>{selectedProduct.stock > 0 ? `${t('add_to_cart')} 🧺` : t('sold_out').toUpperCase()}</span>
+                  <span>
+                    {selectedProduct.stock <= 0
+                      ? t('sold_out').toUpperCase()
+                      : currentPriceNumeric <= 0
+                        ? 'PRICE NOT SET'
+                        : `${t('add_to_cart')} 🧺`}
+                  </span>
                 </button>
                 {/* Refund note — plain text for now; wire this into
                     translations.ts (e.g. `refund_policy_prefix` /
@@ -585,14 +604,6 @@ function ServicesPageInner() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {filteredBrands.map((brand) => {
-                      // "From" price = the cheapest price across this
-                      // brand's products/variants, matching the reference
-                      // card's "From X" line.
-                      const allPrices = brand.products.flatMap((p) =>
-                        p.variants && p.variants.length ? p.variants.map((v) => parsePrice(v.price)) : [parsePrice(p.price)]
-                      );
-                      const fromPrice = Math.min(...allPrices);
-
                       return (
                         <div
                           key={brand.id}
@@ -626,11 +637,7 @@ function ServicesPageInner() {
                             <h3 className="font-bold text-white text-lg mt-1 group-hover:text-red-500 transition">
                               {brand.name}
                             </h3>
-                            <p className="text-xs text-zinc-500 mt-1">
-                              {t('from_price_label')} {fromPrice.toFixed(2)} DT
-                            </p>
-
-                            <button className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-sm font-bold transition">
+                            <button className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
                               {t('buy_now')}
                             </button>
                           </div>
@@ -798,7 +805,7 @@ function ServicesPageInner() {
             <button
               onClick={handleSubmitReview}
               disabled={submittingReview}
-              className="w-full bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-2xl transition"
+              className="w-full bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold text-sm py-3 rounded-2xl transition"
             >
               {submittingReview ? 'Submitting…' : 'Submit review'}
             </button>
