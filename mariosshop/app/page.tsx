@@ -123,6 +123,42 @@ export default function HomePage() {
   const [reviews, setReviews] = useState<HomeReview[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
+  // Payment methods are managed from /admin/payment-methods. Until that list
+  // loads (or if it can't be reached), the built-in TUNISIAN_PAYMENTS show.
+  const [dbPayments, setDbPayments] = useState<{ id: string; name: string; logo: string }[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/payment-methods', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setDbPayments(
+          data.map((m: { id: string; name: string; icon_url: string }) => ({
+            id: m.id,
+            name: m.name,
+            logo: m.icon_url,
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const paymentTiles =
+    dbPayments ?? TUNISIAN_PAYMENTS.map((p) => ({ id: p.id, name: t(p.titleKey), logo: p.logo }));
+
+  // Reviews row: repeat the list until it is wide enough, then double it so
+  // the loop is seamless (the animation moves exactly half the track).
+  const reviewsLoop = (() => {
+    if (reviews.length === 0) return [] as HomeReview[];
+    const base: HomeReview[] = [];
+    while (base.length < 6) base.push(...reviews);
+    return [...base, ...base];
+  })();
+
   // Reviews now come from the shared, database-backed lib/homeReviews.ts
   // (previously localStorage — which only ever showed a review to the
   // browser that wrote it and lost it on refresh/logout). Every visitor
@@ -212,17 +248,22 @@ export default function HomePage() {
       
       {/* INJECTED CSS */}
       <style jsx global>{`
+        /* Moves from LEFT to RIGHT. Swap the two translateX values to reverse. */
         @keyframes marqueeMove {
-          0% { transform: translateX(0%); }
-          100% { transform: translateX(-50%); }
+          0% { transform: translateX(-50%); }
+          100% { transform: translateX(0%); }
         }
         .marquee-container {
           display: flex;
+          flex-wrap: nowrap;
           width: max-content;
-          animation: marqueeMove 25s linear infinite !important;
+          animation: marqueeMove 40s linear infinite !important;
         }
         .marquee-container:hover {
           animation-play-state: paused !important;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .marquee-container { animation: none !important; }
         }
 
         @keyframes starPopIn {
@@ -355,9 +396,9 @@ export default function HomePage() {
                 No reviews yet — be the first to leave one!
               </p>
             ) : (
-            <div className={`flex gap-4 ${reviews.length > 4 ? 'marquee-container' : 'flex-wrap justify-center'}`}>
-              {(reviews.length > 4 ? [...reviews, ...reviews, ...reviews] : reviews).map((review, idx) => (
-                <div key={`${review.id}-${idx}`} className="w-[260px] md:w-[280px] shrink-0 bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/60 p-5 rounded-2xl flex flex-col justify-between hover:border-red-500/50 hover:shadow-lg hover:shadow-red-500/10 transition duration-300">
+            <div className="marquee-container">
+              {reviewsLoop.map((review, idx) => (
+                <div key={`${review.id}-${idx}`} className="w-[260px] md:w-[280px] shrink-0 mr-4 bg-zinc-900/40 backdrop-blur-sm border border-zinc-800/60 p-5 rounded-2xl flex flex-col justify-between hover:border-red-500/50 hover:shadow-lg hover:shadow-red-500/10 transition duration-300">
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-200 font-extrabold flex items-center justify-center text-lg shrink-0 shadow-sm">
@@ -437,25 +478,17 @@ export default function HomePage() {
               2-column (3-column on larger screens) grid inside the same
               outer container. */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
-            {TUNISIAN_PAYMENTS.map((payment) => (
+            {paymentTiles.map((payment) => (
               <div
                 key={payment.id}
                 className="group flex flex-col items-center text-center gap-3 bg-zinc-900/40 border border-zinc-800/60 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl p-4 sm:p-5 transition duration-300"
               >
-                <span className="text-[9px] uppercase font-bold tracking-widest text-zinc-500 bg-zinc-950/60 px-2 py-0.5 rounded-md border border-zinc-800">
-                  {payment.badge}
-                </span>
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-zinc-900/80 flex items-center justify-center border border-zinc-800 group-hover:border-red-500/40 shadow-inner overflow-hidden p-2.5 transition duration-300">
-                  <img src={payment.logo} alt={payment.badge} className="w-full h-full object-contain drop-shadow-lg" />
+                  <img src={payment.logo} alt={payment.name} className="w-full h-full object-contain drop-shadow-lg" />
                 </div>
                 <h3 className="text-xs sm:text-sm font-bold tracking-tight text-zinc-100 group-hover:text-white transition">
-                  {t(payment.titleKey)}
+                  {payment.name}
                 </h3>
-                {/* Description kept for context, just hidden on the
-                    narrowest screens to preserve the compact tile look. */}
-                <p className="hidden sm:block text-[11px] text-zinc-400 leading-snug">
-                  {t(payment.descKey)}
-                </p>
               </div>
             ))}
           </div>
