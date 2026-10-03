@@ -670,7 +670,21 @@ if (res.success) {
                       </span>
                     )}
                   </td>
-                  <td className="p-4 font-mono">{p.price}</td>
+                  <td className="p-4 font-mono">
+                    {editingId === p.id ? (
+                      <input
+                        type="text"
+                        value={pPrice}
+                        onChange={(e) => setPPrice(e.target.value)}
+                        placeholder="e.g. 15 TND"
+                        className="w-28 bg-zinc-900 border border-zinc-800 focus:border-red-500 text-white text-xs p-1.5 rounded outline-none"
+                      />
+                    ) : /\d/.test(p.price || '') ? (
+                      p.price
+                    ) : (
+                      <span className="text-red-400 text-xs font-bold">No price</span>
+                    )}
+                  </td>
                   <td className="p-4 font-mono">
                     {editingId === p.id ? (
                       <div className="space-y-1.5">
@@ -696,6 +710,11 @@ if (res.success) {
                     {editingId === p.id ? (
                       <div className="space-x-1 whitespace-nowrap">
                         <button onClick={async () => {
+                          const hasVariantPrice = pVariants.some((v) => v.label.trim() && /\d/.test(v.price));
+                          if (!/\d/.test(pPrice) && !hasVariantPrice) {
+                            alert("Please enter a price that includes a number, for example 15 TND.");
+                            return;
+                          }
                           const buildUpdates = (image: string) => ({ name: pName, category: pCategory, description: pDesc, price: pPrice, stock: pStock, image, features: pFeatures.split("\n").map(s => s.trim()).filter(Boolean), importantNotice: pImportantNotice.split("\n").map(s => s.trim()).filter(Boolean), variants: draftsToVariants(pVariants), featured: pFeatured });
                           let ok = await updateProductInCatalog(p.brandId, p.id, buildUpdates(pImage));
                           if (!ok && pImage) {
