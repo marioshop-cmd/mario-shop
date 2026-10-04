@@ -31,7 +31,8 @@ export default function ReferralPage() {
               🎁
             </div>
 
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+            <span className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-red-400 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
               Coming Soon
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">

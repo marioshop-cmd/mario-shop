@@ -58,8 +58,12 @@ export default function FeaturedProducts() {
             {activeProduct.title}
           </h3>
 
-          {/* Shop CTA Button */}
-          <div className="flex items-end justify-end mt-2">
+          {/* Price (no "From" label) & Shop CTA Button */}
+          <div className="flex items-end justify-between mt-2">
+            <p className="text-3xl md:text-4xl font-black text-red-500 font-mono tracking-tight">
+              {/\d/.test(activeProduct.price || '') ? activeProduct.price : ''}
+            </p>
+
             <Link
               href={activeProduct.link}
               className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition duration-200 shadow-lg shadow-red-500/25 active:scale-95 flex items-center gap-2 text-sm md:text-base"

@@ -401,6 +401,7 @@ if (res.success) {
             <div className="space-y-1">
               <button onClick={() => router.push('/admin/balance')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">$</span><span className="text-xs font-bold">Payment Requests</span></button>
               <button onClick={() => router.push('/admin/notifications')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">↗</span><span className="text-xs font-bold">Notification Center</span></button>
+              <button onClick={() => router.push('/admin/payment-methods')} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-zinc-400 hover:bg-white/[0.04] hover:text-white transition"><span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04]">💳</span><span className="text-xs font-bold">Payment Methods</span></button>
             </div>
           </div>
           <div className="border-t border-white/[0.06] p-4"><div className="rounded-xl border border-white/[0.06] bg-white/[0.025] p-3"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Store status</p><div className="mt-2 flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/40" /><span className="text-xs font-bold text-zinc-300">Online</span></div></div></div>
@@ -426,6 +427,7 @@ if (res.success) {
               ))}
               <button onClick={() => router.push('/admin/balance')} className="flex min-h-11 items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-left text-[11px] font-black text-zinc-400 active:bg-white/[0.08]"><span className="grid h-7 w-7 place-items-center rounded-md bg-black/20">$</span><span className="truncate">Payment Requests</span></button>
               <button onClick={() => router.push('/admin/notifications')} className="flex min-h-11 items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-left text-[11px] font-black text-zinc-400 active:bg-white/[0.08]"><span className="grid h-7 w-7 place-items-center rounded-md bg-black/20">↗</span><span className="truncate">Notifications</span></button>
+              <button onClick={() => router.push('/admin/payment-methods')} className="flex min-h-11 items-center gap-2 rounded-lg bg-white/[0.04] px-3 py-2 text-left text-[11px] font-black text-zinc-400 active:bg-white/[0.08]"><span className="grid h-7 w-7 place-items-center rounded-md bg-black/20">💳</span><span className="truncate">Payment Methods</span></button>
             </div>
           </div>
         </header>

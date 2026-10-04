@@ -604,6 +604,17 @@ function ServicesPageInner() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {filteredBrands.map((brand) => {
+                      // Lowest real price on this card (variants or product),
+                      // shown plainly with no "From" wording. Items with no
+                      // price set yet show nothing instead of "0.00 DT".
+                      const cardPrices = brand.products
+                        .flatMap((p) =>
+                          p.variants && p.variants.length
+                            ? p.variants.map((v) => parsePrice(v.price))
+                            : [parsePrice(p.price)]
+                        )
+                        .filter((n) => n > 0);
+                      const cardPrice = cardPrices.length ? Math.min(...cardPrices) : 0;
                       return (
                         <div
                           key={brand.id}
@@ -637,6 +648,11 @@ function ServicesPageInner() {
                             <h3 className="font-bold text-white text-lg mt-1 group-hover:text-red-500 transition">
                               {brand.name}
                             </h3>
+                            {cardPrice > 0 && (
+                              <p className="mt-2 text-xl font-black text-red-500">
+                                {cardPrice.toFixed(2)} DT
+                              </p>
+                            )}
                             <button className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
                               {t('buy_now')}
                             </button>
