@@ -538,42 +538,49 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 5. TOP 10 CLIENT ORDERS LEADERBOARD (NEW SECTION) */}
-      <section className="max-w-4xl mx-auto px-4 mt-20">
+      {/* 5. JOIN THE RANKS BANNER (top clients live on /leaderboard) */}
+      <section className="max-w-5xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
-          
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-10 gap-4 text-center sm:text-left">
-            <div>
-              <h2 className="text-3xl font-black tracking-tight text-white flex items-center justify-center sm:justify-start gap-3">
-                 Top 10 Clients
-              </h2>
-              <p className="text-zinc-500 text-sm mt-2">Our most loyal customers. Automatically updates in real-time.</p>
+          <div className="pointer-events-none absolute -right-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-red-600/15 blur-[90px]" />
+
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
+            <div className="max-w-xl">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">Join the Ranks</h2>
+              <p className="mt-3 text-sm md:text-base leading-relaxed text-zinc-400">
+                Compete with other players, climb with every order, and reach the top of the leaderboard!
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center gap-5 shrink-0">
+              {leaderboard.length > 0 && (
+                <div className="flex items-center justify-center">
+                  {leaderboard.slice(0, 3).map((client, index) => (
+                    <div
+                      key={client.id}
+                      title={client.username}
+                      className={`flex items-center justify-center rounded-full border-2 border-zinc-950 text-white font-black shadow-lg ${
+                        index === 0
+                          ? 'order-2 z-10 h-16 w-16 text-2xl -mx-2 bg-gradient-to-br from-amber-400 to-red-600'
+                          : index === 1
+                            ? 'order-1 h-12 w-12 text-lg bg-gradient-to-br from-zinc-400 to-zinc-700'
+                            : 'order-3 h-12 w-12 text-lg bg-gradient-to-br from-orange-500 to-red-900'
+                      }`}
+                    >
+                      {(client.username || '?').charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Link
+                href="/leaderboard"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/25 transition active:scale-95"
+              >
+                <span aria-hidden="true">🏆</span>
+                View Leaderboard
+              </Link>
             </div>
           </div>
-
-          <div className="flex flex-col rounded-xl overflow-hidden">
-            {leaderboard.slice(0, 10).map((client, index) => (
-              <div 
-                key={client.id} 
-                className="leaderboard-row group flex items-center justify-between py-4 border-b border-zinc-800/80 last:border-0 hover:bg-zinc-900/30 transition-colors px-4 -mx-4 sm:px-6 sm:-mx-6 cursor-default"
-              >
-                <div className="flex items-center gap-6 flex-1 min-w-0">
-                  <span className="text-3xl sm:text-4xl font-black font-mono text-zinc-600 group-hover:text-red-500 transition-colors w-10 text-right shrink-0">
-                    {index + 1}
-                  </span>
-                  <p className="font-semibold text-[#b3b3b3] group-hover:text-white transition-colors text-base sm:text-lg truncate">
-                    {client.username}
-                  </p>
-                </div>
-                
-                <div className="flex items-center gap-2 text-zinc-500 text-xs sm:text-sm font-medium shrink-0 ml-4 group-hover:text-zinc-400 transition-colors">
-                  <span className="w-1 h-1 rounded-full bg-zinc-600"></span>
-                  {client.orders} order{client.orders !== 1 ? 's' : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-
         </div>
       </section>
     </main>
