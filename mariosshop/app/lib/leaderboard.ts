@@ -1,93 +1,109 @@
 /**
- * Shared "Top 10 Clients" leaderboard data layer. The homepage reads this
- * to render the leaderboard; the admin dashboard writes to it via
- * addOrderByEmail so a manual "+1 Order" always lands on the same data
- * the storefront shows, instead of two disconnected copies drifting apart.
+ * Shared leaderboard data layer. The ranking now lives in Supabase (via
+ * /api/leaderboard), so every visitor sees the same board on any device.
+ * The old version kept it in each browser's localStorage, which meant only
+ * the browser that wrote it could see it.
  */
 
 export interface LeaderboardEntry {
-  id: number;
+  id: number; // position in the current ranking (1 = first)
   username: string;
-  email?: string;
   orders: number;
+  xp: number;
+  email?: string; // only filled in when the admin key is sent
 }
 
-const STORAGE_KEY = 'marios_shop_leaderboard';
+export interface LeaderboardResult {
+  success: boolean;
+  message: string;
+}
 
-// Same starting data the homepage used to hardcode — kept here as the
-// fallback for a first-ever visit before any real data exists.
-const SEED: LeaderboardEntry[] = [];
+const CHANGED_EVENT = 'marios_leaderboard_changed';
+const POLL_MS = 30000;
 
-export function getLeaderboard(): LeaderboardEntry[] {
-  if (typeof window === 'undefined') return SEED;
+/** 10 XP for every 1 TND spent. Change this one number to change the rule. */
+export const XP_PER_TND = 10;
+export const xpFromTnd = (tnd: number): number => Math.round(Math.max(0, tnd) * XP_PER_TND);
+
+// Rank titles by total XP, highest first. Edit freely.
+const TITLES = [
+  { min: 25000, label: 'LORD', color: 'text-amber-400' },
+  { min: 10000, label: 'LEGEND', color: 'text-red-400' },
+  { min: 5000, label: 'CHAMPION', color: 'text-fuchsia-400' },
+  { min: 2000, label: 'PRO', color: 'text-sky-400' },
+  { min: 500, label: 'PLAYER', color: 'text-emerald-400' },
+  { min: 0, label: 'ROOKIE', color: 'text-zinc-400' },
+];
+
+export function titleForXp(xp: number): { label: string; color: string } {
+  return TITLES.find((t) => xp >= t.min) ?? TITLES[TITLES.length - 1];
+}
+
+/** The ranking, best first. Pass the admin key to also get each player's email. */
+export async function getLeaderboard(limit = 100, adminKey?: string): Promise<LeaderboardEntry[]> {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return SEED;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return SEED;
-    return parsed;
-  } catch {
-    return SEED;
+    const response = await fetch(`/api/leaderboard?limit=${limit}`, {
+      cache: 'no-store',
+      headers: adminKey ? { 'x-admin-key': adminKey } : undefined,
+    });
+    if (!response.ok) return [];
+    const data: unknown = await response.json();
+    return Array.isArray(data) ? (data as LeaderboardEntry[]) : [];
+  } catch (error) {
+    console.error('Unable to load leaderboard:', error);
+    return [];
   }
 }
 
-function writeLeaderboard(list: LeaderboardEntry[]): boolean {
+async function postAdmin(adminKey: string, payload: Record<string, unknown>): Promise<LeaderboardResult> {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    return true;
+    const response = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    const result: LeaderboardResult = {
+      success: Boolean(data?.success),
+      message: data?.message || (response.ok ? 'Done.' : 'Something went wrong.'),
+    };
+    if (result.success && typeof window !== 'undefined') {
+      window.dispatchEvent(new Event(CHANGED_EVENT));
+    }
+    return result;
   } catch {
-    return false;
+    return { success: false, message: '❌ Network error. Please try again.' };
   }
 }
 
-function findUsernameForEmail(email: string): string {
-  try {
-    const users = JSON.parse(window.localStorage.getItem('mario_users') || '[]');
-    const match = users.find((u: any) => (u.email || '').toLowerCase() === email.toLowerCase());
-    return match?.username || email;
-  } catch {
-    return email;
-  }
+/** Admin: add (or remove, with negative numbers) orders and XP for a client. */
+export function adjustLeaderboard(
+  adminKey: string,
+  params: { email: string; addOrders?: number; addXp?: number; username?: string },
+): Promise<LeaderboardResult> {
+  return postAdmin(adminKey, { action: 'adjust', ...params });
 }
 
-/** Adds +1 order for the client with this email. Matches an existing row
- * by stored email first, falling back to username (for older rows seeded
- * before emails were tracked) — or creates a new row starting at 1 order
- * if this client isn't on the board yet. Always re-sorts by order count. */
-export function addOrderByEmail(email: string): { success: boolean; message: string } {
-  const clean = email.trim().toLowerCase();
-  if (!clean) return { success: false, message: '⚠️ Enter a client email.' };
-
-  const username = findUsernameForEmail(clean);
-  const list = getLeaderboard();
-
-  const idx = list.findIndex(
-    (e) => (e.email && e.email.toLowerCase() === clean) || e.username.toLowerCase() === username.toLowerCase()
-  );
-
-  let updated: LeaderboardEntry[];
-  let newOrders: number;
-
-  if (idx !== -1) {
-    newOrders = list[idx].orders + 1;
-    updated = list.map((e, i) => (i === idx ? { ...e, orders: newOrders, email: clean } : e));
-  } else {
-    newOrders = 1;
-    const nextId = list.length > 0 ? Math.max(...list.map((e) => e.id)) + 1 : 1;
-    updated = [...list, { id: nextId, username, email: clean, orders: newOrders }];
-  }
-
-  const sorted = updated.sort((a, b) => b.orders - a.orders);
-  return writeLeaderboard(sorted)
-    ? { success: true, message: `✅ +1 order for ${username} — now at ${newOrders} order${newOrders === 1 ? '' : 's'}.` }
-    : { success: false, message: '❌ Failed to save — try again.' };
+/** Admin: remove a client from the ranking. */
+export function deleteLeaderboardEntry(adminKey: string, email: string): Promise<LeaderboardResult> {
+  return postAdmin(adminKey, { action: 'delete', email });
 }
 
+/** Kept for older code: +1 order for this client. */
+export function addOrderByEmail(email: string, adminKey: string): Promise<LeaderboardResult> {
+  return adjustLeaderboard(adminKey, { email, addOrders: 1 });
+}
+
+/** Calls back when the ranking may have changed: right after an admin edit in
+ * this tab, and every 30 seconds while the tab is visible. */
 export function onLeaderboardChanged(callback: () => void): () => void {
   if (typeof window === 'undefined') return () => {};
-  const handler = (e: StorageEvent) => {
-    if (e.key === STORAGE_KEY) callback();
+  window.addEventListener(CHANGED_EVENT, callback);
+  const timer = window.setInterval(() => {
+    if (!document.hidden) callback();
+  }, POLL_MS);
+  return () => {
+    window.removeEventListener(CHANGED_EVENT, callback);
+    window.clearInterval(timer);
   };
-  window.addEventListener('storage', handler);
-  return () => window.removeEventListener('storage', handler);
 }

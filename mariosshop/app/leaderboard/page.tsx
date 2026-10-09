@@ -3,15 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Crown, Trophy, Hexagon } from 'lucide-react';
-import { getLeaderboard, onLeaderboardChanged, type LeaderboardEntry } from '../lib/leaderboard';
-
-// A rank title earned from the number of orders. Change the numbers freely.
-function titleFor(orders: number): { label: string; color: string } {
-  if (orders >= 20) return { label: 'LEGEND', color: 'text-amber-400' };
-  if (orders >= 10) return { label: 'CHAMPION', color: 'text-red-400' };
-  if (orders >= 5) return { label: 'PRO', color: 'text-sky-400' };
-  return { label: 'PLAYER', color: 'text-zinc-400' };
-}
+import { getLeaderboard, onLeaderboardChanged, titleForXp, type LeaderboardEntry } from '../lib/leaderboard';
 
 const AVATAR_COLORS = [
   'from-amber-400 to-red-600',
@@ -23,15 +15,18 @@ const AVATAR_COLORS = [
 ];
 
 export default function LeaderboardPage() {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [players, setPlayers] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLeaderboard(getLeaderboard());
-    const unsubscribe = onLeaderboardChanged(() => setLeaderboard(getLeaderboard()));
-    return unsubscribe;
+    const refresh = () => {
+      getLeaderboard(100)
+        .then(setPlayers)
+        .finally(() => setLoading(false));
+    };
+    refresh();
+    return onLeaderboardChanged(refresh);
   }, []);
-
-  const rows = leaderboard.slice(0, 100);
 
   return (
     <main className="min-h-screen bg-zinc-950 px-4 pb-20 pt-28 text-white font-sans sm:pt-32">
@@ -43,35 +38,35 @@ export default function LeaderboardPage() {
             Ranking <span className="text-red-500">Leaderboard</span>
           </h1>
           <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400 sm:text-base">
-            See who&apos;s at the top. Every order you make helps you climb the ranks!
+            See who&apos;s at the top. Earn XP with every purchase to climb the ranks!
           </p>
         </div>
 
         {/* Table */}
         <div className="overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 shadow-2xl backdrop-blur-md">
           <div className="px-6 pb-4 pt-6 sm:px-8">
-            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">Top 100 Clients</h2>
-            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">
-              Our most loyal customers. Updates in real time.
-            </p>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">Top 100 Players</h2>
+            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">The most dedicated clients in our shop.</p>
           </div>
 
-          <div className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/80 px-4 py-3 text-xs font-bold text-zinc-500 sm:grid-cols-[5rem_1fr_9rem_6rem] sm:px-8">
+          <div className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/80 px-4 py-3 text-xs font-bold text-zinc-500 sm:grid-cols-[5rem_1fr_9rem_8rem] sm:px-8">
             <span>Rank</span>
             <span>Player</span>
             <span className="hidden text-center sm:block">Title</span>
-            <span className="text-right">Orders</span>
+            <span className="text-right">Total XP</span>
           </div>
 
-          {rows.length === 0 ? (
+          {loading ? (
+            <p className="px-6 py-16 text-center text-sm text-zinc-500">Loading…</p>
+          ) : players.length === 0 ? (
             <p className="px-6 py-16 text-center text-sm text-zinc-500">
-              No orders yet. Be the first on the board!
+              Nobody is on the board yet. Be the first!
             </p>
           ) : (
             <ul>
-              {rows.map((client, index) => {
+              {players.map((player, index) => {
                 const rank = index + 1;
-                const title = titleFor(client.orders);
+                const title = titleForXp(player.xp);
                 const rowTint =
                   rank === 1
                     ? 'bg-amber-500/[0.07]'
@@ -85,16 +80,14 @@ export default function LeaderboardPage() {
 
                 return (
                   <li
-                    key={client.id}
-                    className={`grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/60 px-4 py-3.5 transition-colors last:border-0 sm:grid-cols-[5rem_1fr_9rem_6rem] sm:px-8 ${rowTint}`}
+                    key={`${rank}-${player.username}`}
+                    className={`grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/60 px-4 py-3.5 transition-colors last:border-0 sm:grid-cols-[5rem_1fr_9rem_8rem] sm:px-8 ${rowTint}`}
                   >
                     <span className={`flex items-center gap-2 text-sm font-black ${rankColor}`}>
                       {rank === 1 ? (
                         <Crown className="h-4 w-4" />
-                      ) : rank <= 3 ? (
-                        <Trophy className="h-4 w-4" />
                       ) : (
-                        <Trophy className="h-4 w-4 opacity-40" />
+                        <Trophy className={`h-4 w-4 ${rank > 3 ? 'opacity-40' : ''}`} />
                       )}
                       {rank}
                     </span>
@@ -105,9 +98,14 @@ export default function LeaderboardPage() {
                           AVATAR_COLORS[index % AVATAR_COLORS.length]
                         }`}
                       >
-                        {(client.username || '?').charAt(0).toUpperCase()}
+                        {(player.username || '?').charAt(0).toUpperCase()}
                       </span>
-                      <span className="truncate text-sm font-bold text-zinc-100">{client.username}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-bold text-zinc-100">{player.username}</span>
+                        <span className={`block text-[10px] font-extrabold tracking-wide sm:hidden ${title.color}`}>
+                          {title.label}
+                        </span>
+                      </span>
                     </span>
 
                     <span className={`hidden items-center justify-center gap-1.5 text-xs font-extrabold tracking-wide sm:flex ${title.color}`}>
@@ -116,7 +114,7 @@ export default function LeaderboardPage() {
                     </span>
 
                     <span className="text-right font-mono text-xs font-bold text-red-400 sm:text-sm">
-                      {client.orders} order{client.orders !== 1 ? 's' : ''}
+                      {player.xp.toLocaleString('en-US')} XP
                     </span>
                   </li>
                 );

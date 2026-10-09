@@ -175,8 +175,13 @@ export default function HomePage() {
 
     // Leaderboard now comes from the shared lib/leaderboard.ts, so it stays
     // in sync with whatever the admin dashboard's "+1 Order" tool writes.
-    setLeaderboard(getLeaderboard());
-    const unsubscribeLeaderboard = onLeaderboardChanged(() => setLeaderboard(getLeaderboard()));
+    const refreshLeaderboard = () => {
+      getLeaderboard(3)
+        .then(setLeaderboard)
+        .catch((error: unknown) => console.error('Unable to load leaderboard:', error));
+    };
+    refreshLeaderboard();
+    const unsubscribeLeaderboard = onLeaderboardChanged(refreshLeaderboard);
 
     return () => {
       unsubscribeReviews();

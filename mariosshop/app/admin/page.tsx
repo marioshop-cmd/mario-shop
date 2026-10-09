@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import AdminPinGate from '@/app/components/AdminPinGate';
-import { addOrderByEmail } from '@/app/lib/leaderboard';
+import AdminLeaderboardPanel from '@/app/components/AdminLeaderboardPanel';
 import { getAllTickets } from '@/app/lib/tickets';
 import AdminTicketCenter from '@/app/components/AdminTicketCenter';
 import { getAllOrders, updateOrderStatus, appendOrderMessage, onOrdersChanged, type Order as ShopOrder, type OrderStatus } from '@/app/lib/orders';
@@ -242,19 +242,6 @@ export default function DirectGridAdmin() {
   const [b9chichToAdd, setB9chichToAdd] = useState(10);
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
-  // LEADERBOARD BOOST STATE — manual "+1 Order" for the homepage Top 10
-  // Clients section, matched to a client by their email.
-  const [leaderboardEmail, setLeaderboardEmail] = useState("");
-  const [leaderboardMsg, setLeaderboardMsg] = useState("");
-
-  const handleBoostLeaderboard = () => {
-    if (!leaderboardEmail.trim()) {
-      return setLeaderboardMsg("⚠️ Please enter a client email!");
-    }
-    const res = addOrderByEmail(leaderboardEmail.trim());
-    setLeaderboardMsg(res.message);
-    if (res.success) setLeaderboardEmail("");
-  };
 
   // 🎫 SUPPORT TICKETS — the full chat UI is the shared <AdminTicketCenter />
   // component (also used standalone at /admin/tickets), so replies made here
@@ -756,7 +743,7 @@ if (res.success) {
                 <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Transactions</p><p className="mt-2 text-3xl font-black">{transactions.length}</p><p className="mt-1 text-[10px] text-zinc-600">recorded transactions</p></div>
               </div>
               <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-black">Transaction History</h2><p className="mt-1 text-[10px] text-zinc-600">Balance injections and purchases.</p></div><button onClick={() => router.push('/admin/balance')} className="rounded-lg border border-white/[0.07] px-3 py-2 text-[10px] font-bold text-zinc-400">Payment Requests →</button></div><div className="overflow-x-auto rounded-xl border border-white/[0.05]"><table className="w-full min-w-[650px] text-left text-xs"><thead className="bg-white/[0.025] text-[9px] uppercase tracking-widest text-zinc-600"><tr><th className="p-3">Date</th><th className="p-3">Client</th><th className="p-3">Type</th><th className="p-3">Amount</th><th className="p-3">Balance</th><th className="p-3">Status</th></tr></thead><tbody className="divide-y divide-white/[0.04]">{transactions.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-zinc-600">No transactions yet.</td></tr> : transactions.map((t) => { const linkedOrder = t.orderId ? shopOrders.find((o) => o.id === t.orderId) : undefined; return <tr key={t.id} className="hover:bg-white/[0.02]"><td className="p-3 text-[10px] text-zinc-600">{formatTxnTime(t.createdAt)}</td><td className="p-3 font-bold">{t.email}</td><td className="p-3"><span className={`rounded-md px-2 py-1 text-[9px] font-black ${t.type === 'Injection' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-sky-500/10 text-sky-400'}`}>{t.type}</span></td><td className={`p-3 font-mono font-bold ${t.type === 'Injection' ? 'text-emerald-400' : 'text-red-400'}`}>{t.type === 'Injection' ? '+' : '-'}{t.amount}</td><td className="p-3 text-zinc-400">{t.balanceAfter}</td><td className="p-3 text-[9px] font-black uppercase text-zinc-500">{linkedOrder?.status || '—'}</td></tr>})}</tbody></table></div></section>
-              <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5 sm:max-w-2xl"><div><h2 className="text-sm font-black">Leaderboard</h2><p className="mt-1 text-[10px] text-zinc-600">Manually add +1 order to a client's ranking.</p></div><div className="mt-4 flex flex-col gap-2 sm:flex-row"><input type="email" placeholder="Client email" value={leaderboardEmail} onChange={(e) => setLeaderboardEmail(e.target.value)} className="min-w-0 flex-1 rounded-xl border border-white/[0.07] bg-black/20 p-3 text-xs outline-none focus:border-red-500/50" /><button onClick={handleBoostLeaderboard} className="rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">+1 Order</button></div>{leaderboardMsg && <div className="mt-3 text-[10px] text-zinc-500">{leaderboardMsg}</div>}</section>
+              <AdminLeaderboardPanel />
             </div>
           )}
 
