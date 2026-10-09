@@ -5,44 +5,44 @@
   --foreground: #171717;
 }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Tailwind CSS v4 at-rule; ignored by generic CSS linters. */
+/* stylelint-disable-next-line at-rule-no-unknown */
+/* csslint-disable */
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+/* csslint-enable */
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
   }
 }
 
 body {
   background-color: #05050a;
-  background-image: url('/images/site-bg.jpg');
-  background-size: cover;
-  background-position: center bottom;
-  /* Fixed so the image stays put behind the content while the page
-     scrolls, instead of scrolling away with it. */
-  background-attachment: fixed;
-  background-repeat: no-repeat;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* `background-attachment: fixed` is unreliable on mobile browsers
-   (iOS Safari in particular), so below the tablet breakpoint we use
-   `scroll`, which mobile browsers render correctly. */
-@media (max-width: 767px) {
-  body {
-    background-attachment: scroll;
-  }
+/* The starfield lives on its own fixed layer behind everything instead of
+   on <body>. This works the same on desktop and phones: it always covers
+   exactly the screen (so it is never stretched across a tall page, which
+   made it zoomed and blurry on mobile) and stays put while you scroll. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url('/images/site-bg.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
 }
 
 /* Nearly every page paints its own bg-zinc-950 on top of <body>, which

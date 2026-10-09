@@ -602,7 +602,7 @@ function ServicesPageInner() {
                     {t('no_services_found')}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
                     {filteredBrands.map((brand) => {
                       // Lowest real price on this card (variants or product),
                       // shown plainly with no "From" wording. Items with no
@@ -633,7 +633,7 @@ function ServicesPageInner() {
                           }}
                           className="bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl overflow-hidden cursor-pointer transition transform hover:-translate-y-1 group flex flex-col"
                         >
-                          <div className="relative w-full h-40">
+                          <div className="relative w-full h-28 sm:h-40">
                             <img
                               src={brand.logo}
                               alt={brand.name}
@@ -641,19 +641,27 @@ function ServicesPageInner() {
                             />
                           </div>
 
-                          <div className="p-5 flex flex-col flex-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                          <div className="p-3 sm:p-5 flex flex-col flex-1">
+                            {/* Phones: name first, then category, then a big price (compact
+                                shop-style card). Tablets/desktop keep the original order. */}
+                            <span className="order-2 sm:order-1 mt-0.5 sm:mt-0 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                               {t(CATEGORY_KEYS[brand.category] || brand.category)}
                             </span>
-                            <h3 className="font-bold text-white text-lg mt-1 group-hover:text-red-500 transition">
+                            <h3 className="order-1 sm:order-2 font-bold text-white text-sm sm:text-lg leading-snug sm:mt-1 line-clamp-2 sm:line-clamp-none group-hover:text-red-500 transition">
                               {brand.name}
                             </h3>
                             {cardPrice > 0 && (
-                              <p className="mt-2 text-xl font-black text-red-500">
+                              <p className="order-3 mt-2 text-xl font-black text-red-500 hidden sm:block">
                                 {cardPrice.toFixed(2)} DT
                               </p>
                             )}
-                            <button className="mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
+                            {cardPrice > 0 && (
+                              <p className="order-3 mt-2 text-xl font-black text-white sm:hidden">
+                                {cardPrice.toFixed(2)}{' '}
+                                <span className="text-[11px] font-semibold text-zinc-400">TND</span>
+                              </p>
+                            )}
+                            <button className="order-4 hidden sm:block mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
                               {t('buy_now')}
                             </button>
                           </div>
