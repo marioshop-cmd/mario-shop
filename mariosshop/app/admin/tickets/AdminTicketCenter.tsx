@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   appendMessage,
   getAllTickets,
@@ -71,6 +71,22 @@ export default function AdminTicketCenter({
   const [sending, setSending] = useState(false);
   const [approveAmount, setApproveAmount] = useState<number | ''>('');
   const [deductAmount, setDeductAmount] = useState<number | ''>('');
+
+  // Phones show ONE pane at a time: the ticket list, or the open conversation
+  // with a back button. (Desktop shows both side by side, as before.)
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const firstRender = useRef(true);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
+      rootRef.current?.scrollIntoView({ block: 'start' });
+    }
+  }, [mobileChatOpen]);
 
   const refresh = useCallback(async () => {
     const all = await getAllTickets();
@@ -156,9 +172,9 @@ export default function AdminTicketCenter({
   );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+    <div ref={rootRef} className="grid scroll-mt-24 grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
       {/* Ticket list */}
-      <div className="space-y-3">
+      <div className={`min-w-0 space-y-3 ${mobileChatOpen ? 'max-lg:hidden' : ''}`}>
         <input
           type="text"
           value={search}
@@ -195,7 +211,10 @@ export default function AdminTicketCenter({
               return (
                 <button
                   key={t.id}
-                  onClick={() => setSelectedId(t.id)}
+                  onClick={() => {
+                    setSelectedId(t.id);
+                    setMobileChatOpen(true);
+                  }}
                   className={`w-full rounded-xl border p-3 text-left transition ${
                     selected
                       ? 'border-red-500/60 bg-zinc-900 shadow-[0_0_18px_rgba(239,68,68,0.15)]'
@@ -226,13 +245,24 @@ export default function AdminTicketCenter({
       </div>
 
       {/* Thread view */}
-      <div className={`flex ${paneHeight} flex-col rounded-2xl border border-zinc-800 bg-zinc-900/50`}>
+      <div
+        className={`flex min-w-0 ${paneHeight} flex-col rounded-2xl border border-zinc-800 bg-zinc-900/50 ${
+          mobileChatOpen ? '' : 'max-lg:hidden'
+        }`}
+      >
         {!selectedTicket ? (
           <div className="flex flex-1 items-center justify-center text-xs text-zinc-500">
             Select a ticket to view the conversation.
           </div>
         ) : (
           <>
+            <button
+              type="button"
+              onClick={() => setMobileChatOpen(false)}
+              className="m-3 mb-0 self-start rounded-lg border border-zinc-700 px-3 py-1.5 text-[11px] font-bold text-zinc-300 transition hover:border-red-500/50 hover:text-white lg:hidden"
+            >
+              ← Back to tickets
+            </button>
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-zinc-800 p-4">
               <div>
                 <h2 className="text-sm font-black text-white">{selectedTicket.subject}</h2>
