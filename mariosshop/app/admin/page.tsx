@@ -419,7 +419,7 @@ if (res.success) {
           </div>
         </header>
 
-        <main className="min-h-screen lg:ml-[250px]"><div className="mx-auto max-w-[1500px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
+        <main className="min-h-screen min-w-0 overflow-x-hidden lg:ml-[250px]"><div className="mx-auto w-full min-w-0 max-w-[1500px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8 lg:py-9">
           <div className="mb-5 flex flex-col gap-3 sm:mb-7 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="mb-1 text-[10px] font-black uppercase tracking-[0.25em] text-red-500">Marios Shop / Admin</p>
@@ -875,7 +875,7 @@ if (res.success) {
             </div>
           )}
 
-          {activeSection === 'support' && <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5"><div className="mb-5"><h2 className="text-sm font-black">Support Center</h2><p className="mt-1 text-[10px] text-zinc-600">Manage customer support tickets and replies.</p></div><AdminTicketCenter paneHeight="min-h-[500px] max-h-[700px]" /></div>}
+          {activeSection === 'support' && <div className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5 max-lg:[&>div:last-child]:grid-cols-1 max-lg:[&_*]:min-w-0 max-lg:[&_.flex]:flex-wrap"><div className="mb-5"><h2 className="text-sm font-black">Support Center</h2><p className="mt-1 text-[10px] text-zinc-600">Manage customer support tickets and replies.</p></div><AdminTicketCenter paneHeight="min-h-[500px] max-h-[700px]" /></div>}
 
           {activeSection === 'notifications' && <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-6 text-center sm:p-10"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-red-600/10 text-2xl text-red-400">↗</div><h2 className="mt-4 text-lg font-black">Notification Center</h2><p className="mx-auto mt-2 max-w-md text-xs leading-5 text-zinc-600">Send announcements to all clients or target specific customers/products from the dedicated notification manager.</p><button onClick={() => router.push('/admin/notifications')} className="mt-6 rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">Open Notification Center →</button></div>}
         </div></main>
