@@ -194,6 +194,21 @@ function ServicesPageInner() {
     setSelectedVariantId(product.variants && product.variants.length > 0 ? product.variants[0].id : "");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  // Whenever a service or product is opened (or you switch to another one),
+  // start the page at the TOP. Without this the browser keeps the scroll
+  // position of the list you clicked from, so the new page appeared already
+  // scrolled down. 'auto' jumps straight up instead of sliding.
+  const openedKey = `${selectedBrand?.id ?? ''}|${selectedProduct?.id ?? ''}`;
+  useEffect(() => {
+    if (!selectedBrand && !selectedProduct) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    // Once more after the new page has laid out (images can shift it).
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+    return () => window.cancelAnimationFrame(frame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openedKey]);
+
   // Same-category products shown below the purchase panel. Recomputes
   // whenever the catalog refreshes or the viewer opens a different product.
   const relatedProducts = useMemo(() => {
