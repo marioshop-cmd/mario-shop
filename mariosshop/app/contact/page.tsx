@@ -386,7 +386,7 @@ function ContactPageContent() {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Support sections" className="flex justify-center gap-3">
+        <div role="tablist" aria-label="Support sections" className="flex flex-wrap justify-center gap-2 sm:gap-3">
           {tabs.map((tab) => {
             const selected = activeTab === tab.id;
             return (
@@ -397,7 +397,7 @@ function ContactPageContent() {
                 aria-selected={selected}
                 aria-controls={`${formId}-panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 rounded-full border px-6 py-2.5 text-xs font-extrabold tracking-wider transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${
+                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-extrabold tracking-wider transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6 ${
                   selected
                     ? 'border-red-500/80 bg-zinc-900 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
                     : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
@@ -411,7 +411,7 @@ function ContactPageContent() {
 
           <Link
             href="/my-tickets"
-            className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-6 py-2.5 text-xs font-extrabold tracking-wider text-zinc-400 transition-all duration-300 hover:border-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+            className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-extrabold tracking-wider text-zinc-400 transition-all duration-300 hover:border-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6"
           >
             <InboxIcon className="h-4 w-4 text-red-500" />
             {t('my_tickets_tab')}
@@ -674,7 +674,7 @@ function ContactPageContent() {
       </div>
 
       {/* Floating chat button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] z-30 sm:right-6 md:bottom-6">
         {!isChatOpen ? (
           <button
             onClick={() => setIsChatOpen(true)}
