@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
-      .from('notifications')
+      .from('app_notifications')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(300);
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
     const category = CATEGORIES.includes(body?.category) ? body.category : 'general';
     const productId = Number.isFinite(Number(body?.productId)) && body?.productId !== undefined ? Number(body.productId) : null;
 
-    const { error } = await supabase.from('notifications').insert({
+    const { error } = await supabase.from('app_notifications').insert({
       id: generateId(),
       title,
       message,
@@ -169,13 +169,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (body?.action === 'resend') {
-    const { data, error: readError } = await supabase.from('notifications').select('resent_at').eq('id', id).maybeSingle();
+    const { data, error: readError } = await supabase.from('app_notifications').select('resent_at').eq('id', id).maybeSingle();
     if (readError || !data) {
       return NextResponse.json({ success: false, message: 'Notification not found.' }, { status: 404 });
     }
     const resent = Array.isArray(data.resent_at) ? data.resent_at : [];
     const { error } = await supabase
-      .from('notifications')
+      .from('app_notifications')
       .update({ resent_at: [...resent, new Date().toISOString()] })
       .eq('id', id);
     if (error) {
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (body?.action === 'delete') {
-    const { error } = await supabase.from('notifications').delete().eq('id', id);
+    const { error } = await supabase.from('app_notifications').delete().eq('id', id);
     if (error) {
       console.error('Failed to delete notification:', error);
       return NextResponse.json({ success: false, message: 'Could not delete it.' }, { status: 500 });
