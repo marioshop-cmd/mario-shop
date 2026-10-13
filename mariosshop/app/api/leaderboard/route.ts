@@ -86,6 +86,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'Invalid request body.' }, { status: 400 });
   }
 
+  // Wipe the whole ranking (admin only, the panel asks twice before sending this).
+  if (body?.action === 'clear_all') {
+    try {
+      const supabase = getSupabase();
+      const { error } = await supabase.from('leaderboard').delete().neq('email', '');
+      if (error) {
+        console.error('Failed to clear leaderboard:', error);
+        return NextResponse.json({ success: false, message: 'Could not clear the ranking.' }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, message: '🗑️ The whole ranking was cleared.' });
+    } catch (err) {
+      console.error(err);
+      return NextResponse.json({ success: false, message: 'Server is not configured' }, { status: 500 });
+    }
+  }
+
   const email = String(body?.email ?? '').trim().toLowerCase();
   if (!email || !email.includes('@')) {
     return NextResponse.json({ success: false, message: 'Enter a valid client email.' }, { status: 400 });

@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   adjustLeaderboard,
+  clearLeaderboard,
   deleteLeaderboardEntry,
   getLeaderboard,
   onLeaderboardChanged,
@@ -90,6 +91,16 @@ export default function AdminLeaderboardPanel() {
     if (result.success) load();
   };
 
+  const handleClearAll = async () => {
+    setMessage('');
+    if (!adminKey) return setMessage('⚠️ Enter the admin key first.');
+    if (!confirm('Clear the ENTIRE leaderboard? Every player will be removed.')) return;
+    if (!confirm('Are you sure? This cannot be undone.')) return;
+    const result = await clearLeaderboard(adminKey);
+    setMessage(result.message);
+    if (result.success) load();
+  };
+
   const inputClass =
     'min-w-0 rounded-xl border border-white/[0.07] bg-black/20 p-3 text-xs outline-none focus:border-red-500/50';
 
@@ -164,7 +175,18 @@ export default function AdminLeaderboardPanel() {
       {message && <div className="mt-3 text-[11px] text-zinc-400">{message}</div>}
 
       <div className="mt-5 border-t border-white/[0.06] pt-4">
-        <h3 className="mb-3 text-[11px] font-black uppercase tracking-wider text-zinc-500">Current ranking</h3>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h3 className="text-[11px] font-black uppercase tracking-wider text-zinc-500">Current ranking</h3>
+          {players.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="rounded-lg border border-red-500/40 px-3 py-1 text-[10px] font-bold text-red-400 hover:bg-red-500/10"
+            >
+              Clear whole ranking
+            </button>
+          )}
+        </div>
         {loading ? (
           <p className="text-xs text-zinc-600">Loading…</p>
         ) : players.length === 0 ? (

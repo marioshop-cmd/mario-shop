@@ -89,6 +89,11 @@ export function deleteLeaderboardEntry(adminKey: string, email: string): Promise
   return postAdmin(adminKey, { action: 'delete', email });
 }
 
+/** Admin: remove EVERY player from the ranking. */
+export function clearLeaderboard(adminKey: string): Promise<LeaderboardResult> {
+  return postAdmin(adminKey, { action: 'clear_all' });
+}
+
 /** Kept for older code: +1 order for this client. */
 export function addOrderByEmail(email: string, adminKey: string): Promise<LeaderboardResult> {
   return adjustLeaderboard(adminKey, { email, addOrders: 1 });
