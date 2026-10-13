@@ -78,11 +78,11 @@ export default function NotificationsPage() {
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [saved, setSaved] = useState(false);
   const [received, setReceived] = useState<AppNotification[]>([]);
-
   const refreshReceived = () => {
-    if (currentUser) setReceived(getNotificationsForEmail(currentUser.email));
+    if (currentUser) {
+      getNotificationsForEmail(currentUser.email).then(setReceived);
+    }
   };
-
   useEffect(() => {
     refreshReceived();
     const unsubscribe = onNotificationsChanged(refreshReceived);
