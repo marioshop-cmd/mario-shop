@@ -67,6 +67,34 @@ export async function addHomeReview(input: {
   return saved ? newReview : null;
 }
 
+async function deleteRequest(adminKey: string, payload: Record<string, unknown>): Promise<{ success: boolean; message: string }> {
+  try {
+    const response = await fetch('/api/home-reviews', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { success: false, message: data?.error || 'Something went wrong.' };
+    }
+    notifyAllListeners(); // refresh any list open in this tab
+    return { success: true, message: '' };
+  } catch {
+    return { success: false, message: 'Network error. Please try again.' };
+  }
+}
+
+/** Admin: delete one review. */
+export function deleteHomeReview(adminKey: string, id: number) {
+  return deleteRequest(adminKey, { id });
+}
+
+/** Admin: delete every review. */
+export function clearHomeReviews(adminKey: string) {
+  return deleteRequest(adminKey, { all: true });
+}
+
 // Realtime updates — same shared-channel approach as lib/products.ts, so a
 // review someone else just submitted shows up here without a page reload.
 let realtimeClient: SupabaseClient | null = null;

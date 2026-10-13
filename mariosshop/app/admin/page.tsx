@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/app/context/AuthContext';
 import AdminPinGate from '@/app/components/AdminPinGate';
 import AdminLeaderboardPanel from '@/app/components/AdminLeaderboardPanel';
+import AdminReviewsPanel from '@/app/components/AdminReviewsPanel';
 import { getAllTickets } from '@/app/lib/tickets';
 import AdminTicketCenter from '@/app/components/AdminTicketCenter';
 import { getAllOrders, updateOrderStatus, appendOrderMessage, onOrdersChanged, type Order as ShopOrder, type OrderStatus } from '@/app/lib/orders';
@@ -743,7 +744,7 @@ if (res.success) {
                 <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><p className="text-[10px] font-black uppercase tracking-widest text-zinc-600">Transactions</p><p className="mt-2 text-3xl font-black">{transactions.length}</p><p className="mt-1 text-[10px] text-zinc-600">recorded transactions</p></div>
               </div>
               <section className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-5"><div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 className="text-sm font-black">Transaction History</h2><p className="mt-1 text-[10px] text-zinc-600">Balance injections and purchases.</p></div><button onClick={() => router.push('/admin/balance')} className="rounded-lg border border-white/[0.07] px-3 py-2 text-[10px] font-bold text-zinc-400">Payment Requests →</button></div><div className="overflow-x-auto rounded-xl border border-white/[0.05]"><table className="w-full min-w-[650px] text-left text-xs"><thead className="bg-white/[0.025] text-[9px] uppercase tracking-widest text-zinc-600"><tr><th className="p-3">Date</th><th className="p-3">Client</th><th className="p-3">Type</th><th className="p-3">Amount</th><th className="p-3">Balance</th><th className="p-3">Status</th></tr></thead><tbody className="divide-y divide-white/[0.04]">{transactions.length === 0 ? <tr><td colSpan={6} className="p-8 text-center text-zinc-600">No transactions yet.</td></tr> : transactions.map((t) => { const linkedOrder = t.orderId ? shopOrders.find((o) => o.id === t.orderId) : undefined; return <tr key={t.id} className="hover:bg-white/[0.02]"><td className="p-3 text-[10px] text-zinc-600">{formatTxnTime(t.createdAt)}</td><td className="p-3 font-bold">{t.email}</td><td className="p-3"><span className={`rounded-md px-2 py-1 text-[9px] font-black ${t.type === 'Injection' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-sky-500/10 text-sky-400'}`}>{t.type}</span></td><td className={`p-3 font-mono font-bold ${t.type === 'Injection' ? 'text-emerald-400' : 'text-red-400'}`}>{t.type === 'Injection' ? '+' : '-'}{t.amount}</td><td className="p-3 text-zinc-400">{t.balanceAfter}</td><td className="p-3 text-[9px] font-black uppercase text-zinc-500">{linkedOrder?.status || '—'}</td></tr>})}</tbody></table></div></section>
-              <AdminLeaderboardPanel />
+              <div className="space-y-6"><AdminLeaderboardPanel /><AdminReviewsPanel /></div>
             </div>
           )}
 
@@ -875,7 +876,7 @@ if (res.success) {
             </div>
           )}
 
-          {activeSection === 'support' && <div className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5 max-lg:[&>div:last-child]:grid-cols-1 max-lg:[&_*]:min-w-0 max-lg:[&_.flex]:flex-wrap"><div className="mb-5"><h2 className="text-sm font-black">Support Center</h2><p className="mt-1 text-[10px] text-zinc-600">Manage customer support tickets and replies.</p></div><AdminTicketCenter paneHeight="min-h-[500px] max-h-[700px]" /></div>}
+          {activeSection === 'support' && <div className="min-w-0 overflow-hidden rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-4 sm:p-5"><div className="mb-5"><h2 className="text-sm font-black">Support Center</h2><p className="mt-1 text-[10px] text-zinc-600">Manage customer support tickets and replies.</p></div><AdminTicketCenter paneHeight="min-h-[500px] max-h-[700px]" /></div>}
 
           {activeSection === 'notifications' && <div className="rounded-2xl border border-white/[0.06] bg-[#0d0d10] p-6 text-center sm:p-10"><div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-red-600/10 text-2xl text-red-400">↗</div><h2 className="mt-4 text-lg font-black">Notification Center</h2><p className="mx-auto mt-2 max-w-md text-xs leading-5 text-zinc-600">Send announcements to all clients or target specific customers/products from the dedicated notification manager.</p><button onClick={() => router.push('/admin/notifications')} className="mt-6 rounded-xl bg-red-600 px-5 py-3 text-xs font-black hover:bg-red-500">Open Notification Center →</button></div>}
         </div></main>
