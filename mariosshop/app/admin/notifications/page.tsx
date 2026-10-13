@@ -1,11 +1,12 @@
 'use client';
 
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import AdminPinGate from '../../components/AdminPinGate';
 import {
   createNotification,
+  deleteNotification,
   getAllNotifications,
   onNotificationsChanged,
   resendNotification,
@@ -68,6 +69,25 @@ function AdminNotificationsInner() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // Same admin key as the other admin tools (PAYMENT_ADMIN_KEY). It is only
+  // kept for this browser tab.
+  const [adminKey, setAdminKey] = useState('');
+  useEffect(() => {
+    try {
+      setAdminKey(sessionStorage.getItem('paymentAdminKey') || '');
+    } catch {
+      /* storage not available */
+    }
+  }, []);
+  const handleKeyChange = (value: string) => {
+    setAdminKey(value);
+    try {
+      sessionStorage.setItem('paymentAdminKey', value);
+    } catch {
+      /* storage not available */
+    }
+  };
+
   useEffect(() => {
     if (productName) {
       setTitle(`${productName} — Update!`);
@@ -76,32 +96,44 @@ function AdminNotificationsInner() {
     }
   }, [productName]);
 
-  const refreshNotifications = () => setNotifications(getAllNotifications());
+  const refreshNotifications = useCallback(() => {
+    if (!adminKey) {
+      setNotifications([]);
+      return;
+    }
+    getAllNotifications(adminKey)
+      .then(setNotifications)
+      .catch((error: unknown) => console.error('Unable to load notifications:', error));
+  }, [adminKey]);
 
   useEffect(() => {
     refreshNotifications();
-    const unsubscribe = onNotificationsChanged(refreshNotifications);
-    return unsubscribe;
-  }, []);
+    return onNotificationsChanged(refreshNotifications);
+  }, [refreshNotifications]);
 
+  // Client list for "Specific clients": the shared account list in Supabase.
   useEffect(() => {
-    try {
-      const rawUsers = JSON.parse(localStorage.getItem('mario_users') || '[]');
-      setClients(
-        rawUsers
-          .filter((u: any) => u.email)
-          .map((u: any) => ({ email: u.email, username: u.username || u.email }))
-      );
-    } catch {
-      setClients([]);
-    }
+    fetch('/api/user-accounts', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((users: any[]) => {
+        setClients(
+          (Array.isArray(users) ? users : [])
+            .filter((u) => u?.email)
+            .map((u) => ({ email: u.email, username: u.username || u.email }))
+        );
+      })
+      .catch(() => setClients([]));
   }, []);
 
   const toggleEmail = (email: string) => {
     setSelectedEmails((prev) => (prev.includes(email) ? prev.filter((e) => e !== email) : [...prev, email]));
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    if (!adminKey) {
+      setFeedback({ type: 'error', text: 'Enter the admin key first.' });
+      return;
+    }
     if (!title.trim() || !message.trim()) {
       setFeedback({ type: 'error', text: 'Add a title and message first.' });
       return;
@@ -111,7 +143,7 @@ function AdminNotificationsInner() {
       return;
     }
 
-    const result = createNotification({
+    const result = await createNotification(adminKey, {
       title: title.trim(),
       message: message.trim(),
       recipients: audience === 'all' ? 'all' : selectedEmails,
@@ -121,7 +153,7 @@ function AdminNotificationsInner() {
       brandId: brandId || undefined,
     });
 
-    if (result) {
+    if (result.success) {
       setFeedback({ type: 'success', text: 'Notification sent.' });
       setTitle('');
       setMessage('');
@@ -130,12 +162,29 @@ function AdminNotificationsInner() {
       setCategory('general');
       refreshNotifications();
     } else {
-      setFeedback({ type: 'error', text: 'Something went wrong sending that.' });
+      setFeedback({ type: 'error', text: result.message || 'Something went wrong sending that.' });
     }
   };
 
-  const handleResend = (id: string) => {
-    if (resendNotification(id)) refreshNotifications();
+  const handleResend = async (id: string) => {
+    if (!adminKey) {
+      setFeedback({ type: 'error', text: 'Enter the admin key first.' });
+      return;
+    }
+    const result = await resendNotification(adminKey, id);
+    if (result.success) refreshNotifications();
+    else setFeedback({ type: 'error', text: result.message });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!adminKey) {
+      setFeedback({ type: 'error', text: 'Enter the admin key first.' });
+      return;
+    }
+    if (!confirm('Delete this notification for everyone?')) return;
+    const result = await deleteNotification(adminKey, id);
+    if (result.success) refreshNotifications();
+    else setFeedback({ type: 'error', text: result.message });
   };
 
   const recipientLabel = (n: AppNotification) => {
@@ -186,6 +235,21 @@ function AdminNotificationsInner() {
                 <p className="mt-1 text-lg font-black">{allAudience}</p>
               </div>
             </div>
+          </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/45 p-3 sm:p-4">
+            <label htmlFor="notif-admin-key" className="text-[10px] font-black uppercase tracking-wider text-zinc-500">
+              Admin key
+            </label>
+            <input
+              id="notif-admin-key"
+              type="password"
+              value={adminKey}
+              onChange={(e) => handleKeyChange(e.target.value)}
+              placeholder="PAYMENT_ADMIN_KEY (needed to send and to see the history)"
+              autoComplete="off"
+              className="mt-2 w-full min-w-0 rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-white outline-none focus:border-red-500"
+            />
           </div>
 
           {productName && (
@@ -382,6 +446,12 @@ function AdminNotificationsInner() {
                               ` · resent ${n.resentAt.length}x · last ${formatTime(n.resentAt[n.resentAt.length - 1])}`}
                           </p>
                         </div>
+                        <button
+                          onClick={() => handleDelete(n.id)}
+                          className="w-full shrink-0 rounded-lg border border-red-900/50 bg-red-950/30 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-red-400 transition hover:bg-red-950/60 sm:w-auto"
+                        >
+                          🗑 Delete
+                        </button>
                         <button
                           onClick={() => handleResend(n.id)}
                           className="w-full shrink-0 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-zinc-400 transition hover:border-red-500/50 hover:text-red-400 sm:w-auto"

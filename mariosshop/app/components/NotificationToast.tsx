@@ -8,7 +8,9 @@ import { useAuth } from '../context/AuthContext';
 import { getNotificationsForEmail, onNotificationsChanged, type AppNotification } from '../lib/notifications';
 
 const SEEN_KEY_PREFIX = 'seen-notifications-';
-const POLL_MS = 4000; // also poll, since localStorage 'storage' events don't fire in the same tab
+// Notifications older than this are never popped up on a device that has not
+// seen them yet (a brand-new phone would otherwise get the whole history).
+const MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
 
 /** Unique key per "occurrence" — a resend of the same notification counts as new. */
 function occurrenceKey(n: AppNotification): string {
@@ -42,12 +44,17 @@ export default function NotificationToast() {
   const router = useRouter();
   const [queue, setQueue] = useState<AppNotification[]>([]);
 
-  const checkForNew = useCallback(() => {
+  const checkForNew = useCallback(async () => {
     if (!currentUser?.email) return;
     const email = currentUser.email.toLowerCase();
     const seen = getSeenSet(email);
-    const all = getNotificationsForEmail(email);
-    const unseen = all.filter((n) => !seen.has(occurrenceKey(n)));
+    const all = await getNotificationsForEmail(email);
+    const now = Date.now();
+    const unseen = all.filter((n) => {
+      if (seen.has(occurrenceKey(n))) return false;
+      const lastTime = n.resentAt.length ? n.resentAt[n.resentAt.length - 1] : n.createdAt;
+      return now - new Date(lastTime).getTime() <= MAX_AGE_MS;
+    });
 
     if (unseen.length === 0) return;
     setQueue((prev) => {
@@ -61,13 +68,8 @@ export default function NotificationToast() {
     if (!currentUser?.email) return;
     checkForNew();
 
-    const unsubscribe = onNotificationsChanged(checkForNew);
-    const interval = setInterval(checkForNew, POLL_MS);
-
-    return () => {
-      unsubscribe();
-      clearInterval(interval);
-    };
+    // Re-checks right after an admin change and every 20s while the tab is open.
+    return onNotificationsChanged(checkForNew);
   }, [currentUser?.email, checkForNew]);
 
   const dismiss = (n: AppNotification) => {
