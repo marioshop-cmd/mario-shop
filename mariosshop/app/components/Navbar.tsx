@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Store,
+  User,
   Users,
   X,
 } from 'lucide-react';
@@ -188,7 +189,21 @@ export default function Navbar() {
             </div>
 
             <div className="hidden items-center gap-2 pl-2 md:flex">
-              <span className="text-xs font-bold text-zinc-300">{currentUser?.username || 'Guest'}</span>
+              {currentUser ? (
+                <Link
+                  href="/account"
+                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                    pathname?.startsWith('/account')
+                      ? 'border-red-500/60 bg-red-500/10 text-red-400'
+                      : 'border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                  }`}
+                >
+                  <User className="h-4 w-4" />
+                  Profile
+                </Link>
+              ) : (
+                <span className="text-xs font-bold text-zinc-300">Guest</span>
+              )}
               {currentUser ? (
                 <button type="button" onClick={logoutUser} className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-bold text-zinc-300 transition hover:bg-zinc-800">
                   Logout
