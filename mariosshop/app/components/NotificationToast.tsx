@@ -5,28 +5,19 @@ import { createPortal } from 'react-dom';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Check, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-type NotifPreset = 'all' | 'products' | 'orders';
-type NotifStatus = 'enabled' | 'disabled' | null;
-type NotificationCategory = 'promo' | 'product' | 'order' | 'general' | string;
-
-type AppNotification = {
-  id: string;
-  title: string;
-  message: string;
-  category: NotificationCategory;
-  createdAt: string;
-  resentAt: string[];
-  brandId?: string;
-  productId?: number | string | null;
-};
-
-const STATUS_EVENT = 'notif-status-changed';
-const PRESETS: { value: NotifPreset; label: string; hint: string }[] = [
-  { value: 'all', label: 'Everything', hint: 'Deals, products and order updates' },
-  { value: 'products', label: 'Products only', hint: 'New arrivals and store updates' },
-  { value: 'orders', label: 'Orders only', hint: 'Shipping and order status updates' },
-];
+import { getNotificationsForEmail, onNotificationsChanged, type AppNotification } from '../lib/notifications';
+import {
+  PRESETS,
+  STATUS_EVENT,
+  getNotifStatus,
+  isCategoryAllowed,
+  loadPrefs,
+  prefsForPreset,
+  savePrefs,
+  setNotifStatus,
+  type NotifPreset,
+  type NotifStatus,
+} from '../lib/notificationPrefs';
 
 const SEEN_KEY_PREFIX = 'seen-notifications-';
 const LATER_KEY_PREFIX = 'notif-later-';
@@ -34,74 +25,6 @@ const TOAST_MS = 4000; // how long each mini pop-up stays
 const FLASH_MS = 3000;
 // Older notifications are never popped up on a device that hasn't seen them.
 const MAX_AGE_MS = 3 * 24 * 60 * 60 * 1000;
-
-function loadPrefs(): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem('notif-prefs');
-    if (!raw) return { promo: true, product: true, order: true };
-    const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed ? parsed : { promo: true, product: true, order: true };
-  } catch {
-    return { promo: true, product: true, order: true };
-  }
-}
-
-function savePrefs(prefs: Record<string, boolean>) {
-  try {
-    localStorage.setItem('notif-prefs', JSON.stringify(prefs));
-  } catch {
-    /* ignore storage failures */
-  }
-}
-
-function prefsForPreset(preset: NotifPreset): Record<string, boolean> {
-  switch (preset) {
-    case 'all':
-      return { promo: true, product: true, order: true };
-    case 'products':
-      return { promo: true, product: true, order: false };
-    case 'orders':
-      return { promo: false, product: false, order: true };
-    default:
-      return { promo: true, product: true, order: true };
-  }
-}
-
-function isCategoryAllowed(prefs: Record<string, boolean>, category: string): boolean {
-  const key = String(category).toLowerCase();
-  if (key.includes('order')) return prefs.order ?? true;
-  if (key.includes('product') || key.includes('promo')) return prefs.product ?? prefs.promo ?? true;
-  return prefs.general ?? true;
-}
-
-function getNotifStatus(email: string): NotifStatus {
-  try {
-    const raw = localStorage.getItem(`notif-status-${email}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed === 'enabled' || parsed === 'disabled' ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function setNotifStatus(email: string, status: NotifStatus) {
-  try {
-    localStorage.setItem(`notif-status-${email}`, JSON.stringify(status));
-  } catch {
-    /* ignore storage failures */
-  }
-  window.dispatchEvent(new CustomEvent(STATUS_EVENT));
-}
-
-async function getNotificationsForEmail(_email: string): Promise<AppNotification[]> {
-  return [];
-}
-
-function onNotificationsChanged(callback: () => void) {
-  const id = setInterval(callback, 20000);
-  return () => clearInterval(id);
-}
 
 /** Unique key per "occurrence": a resend of the same notification counts as new. */
 function occurrenceKey(n: AppNotification): string {

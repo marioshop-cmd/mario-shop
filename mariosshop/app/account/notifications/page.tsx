@@ -11,36 +11,7 @@ import {
   onNotificationsChanged,
   type AppNotification,
 } from '../../lib/notifications';
-
-type NotifStatus = 'enabled' | 'disabled' | null;
-
-const NOTIF_STATUS_KEY = 'notification-popups-status';
-
-function getNotifStatus(email: string): NotifStatus {
-  if (typeof window === 'undefined') return null;
-
-  try {
-    const value = localStorage.getItem(`${NOTIF_STATUS_KEY}:${email}`);
-    return value === 'enabled' || value === 'disabled' ? value : null;
-  } catch {
-    return null;
-  }
-}
-
-function setNotifStatus(email: string, status: NotifStatus): void {
-  if (typeof window === 'undefined') return;
-
-  try {
-    if (status === null) {
-      localStorage.removeItem(`${NOTIF_STATUS_KEY}:${email}`);
-      return;
-    }
-
-    localStorage.setItem(`${NOTIF_STATUS_KEY}:${email}`, status);
-  } catch {
-    // ignore storage errors
-  }
-}
+import { getNotifStatus, setNotifStatus, type NotifStatus } from '../../lib/notificationPrefs';
 
 function formatNotifTime(iso: string): string {
   try {

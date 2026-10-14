@@ -1,10 +1,12 @@
 'use client';
 
 import React from "react";
+// @ts-ignore CSS side-effect imports are handled by the Next.js bundler.
 import "./globals.css";
-import { AuthProvider } from "@/app/context/AuthContext";
-import { CartProvider } from "@/app/context/CartContext";
-import { LanguageProvider } from "@/app/language/LanguageContext";
+import { AuthProvider } from "./context/AuthContext";
+import NotificationToast from "./components/NotificationToast";
+import { CartProvider } from "./context/CartContext";
+import { LanguageProvider } from "./language/LanguageContext";
 import Navbar from "./components/Navbar";
 import MobileBottomNav from "./components/MobileBottomNav";
 import Footer from "./components/Footer";
@@ -46,6 +48,7 @@ export default function RootLayout({
 
               <Footer />
               <CartDrawer />
+              <NotificationToast />
             </CartProvider>
           </AuthProvider>
         </LanguageProvider>
