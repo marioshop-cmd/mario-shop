@@ -3,6 +3,7 @@
 import React from "react";
 // @ts-ignore CSS side-effect imports are handled by the Next.js bundler.
 import "./globals.css";
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { AuthProvider } from "./context/AuthContext";
 import NotificationToast from "./components/NotificationToast";
 import { CartProvider } from "./context/CartContext";
@@ -52,6 +53,7 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </LanguageProvider>
+        <GoogleAnalytics gaId="G-QRMZVEKJ6D" />
       </body>
     </html>
   );
