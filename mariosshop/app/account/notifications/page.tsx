@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../language/LanguageContext';
@@ -11,6 +11,36 @@ import {
   onNotificationsChanged,
   type AppNotification,
 } from '../../lib/notifications';
+
+type NotifStatus = 'enabled' | 'disabled' | null;
+
+const NOTIF_STATUS_KEY = 'notification-popups-status';
+
+function getNotifStatus(email: string): NotifStatus {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const value = localStorage.getItem(`${NOTIF_STATUS_KEY}:${email}`);
+    return value === 'enabled' || value === 'disabled' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function setNotifStatus(email: string, status: NotifStatus): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    if (status === null) {
+      localStorage.removeItem(`${NOTIF_STATUS_KEY}:${email}`);
+      return;
+    }
+
+    localStorage.setItem(`${NOTIF_STATUS_KEY}:${email}`, status);
+  } catch {
+    // ignore storage errors
+  }
+}
 
 function formatNotifTime(iso: string): string {
   try {
@@ -77,6 +107,22 @@ export default function NotificationsPage() {
   const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
   const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
   const [saved, setSaved] = useState(false);
+
+  // Master switch for the in-site pop-ups (the "Enable / Later" question).
+  const [popupStatus, setPopupStatus] = useState<NotifStatus>(null);
+  useEffect(() => {
+    if (currentUser?.email) setPopupStatus(getNotifStatus(currentUser.email));
+  }, [currentUser?.email]);
+
+  const togglePopups = () => {
+    if (!currentUser?.email) return;
+    const next = popupStatus === 'enabled' ? 'disabled' : 'enabled';
+    setNotifStatus(currentUser.email, next);
+    setPopupStatus(next);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1500);
+  };
+
   const [received, setReceived] = useState<AppNotification[]>([]);
   const refreshReceived = () => {
     if (currentUser) {
@@ -195,6 +241,18 @@ export default function NotificationsPage() {
             </div>
           </section>
         )}
+
+        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 mb-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-sm font-bold text-white">Pop-up notifications</h2>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                A short pop-up while you browse the shop when we send something new.
+              </p>
+            </div>
+            <Toggle checked={popupStatus === 'enabled'} onChange={togglePopups} />
+          </div>
+        </section>
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
           <h2 className="text-sm font-bold text-white mb-1">{t('acct_notif_prefs_title')}</h2>
