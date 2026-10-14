@@ -407,7 +407,7 @@ function ServicesPageInner() {
                 <img
                   src={selectedProduct.image}
                   alt={selectedProduct.name}
-                  className={`absolute inset-0 w-full h-full object-cover transition ${
+                  className={`absolute inset-0 w-full h-full object-contain transition ${
                     selectedProduct.stock <= 0 ? 'grayscale opacity-60' : ''
                   }`}
                 />
@@ -450,11 +450,11 @@ function ServicesPageInner() {
                     onClick={() => handleOpenRelatedProduct(brand, product)}
                     className="rounded-2xl overflow-hidden border border-zinc-800/80 bg-zinc-900/40 hover:border-red-500/40 cursor-pointer transition group"
                   >
-                    <div className="relative w-full aspect-[16/9]">
+                    <div className="relative w-full aspect-[4/3] bg-zinc-900">
                       <img
                         src={product.image}
                         alt={product.name}
-                        className="absolute inset-0 w-full h-full object-cover transition group-hover:scale-105"
+                        className="absolute inset-0 w-full h-full object-contain transition group-hover:scale-105"
                       />
                     </div>
                     <div className="p-3">
@@ -648,11 +648,11 @@ function ServicesPageInner() {
                           }}
                           className="bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl overflow-hidden cursor-pointer transition transform hover:-translate-y-1 group flex flex-col"
                         >
-                          <div className="relative w-full h-28 sm:h-40">
+                          <div className="relative w-full aspect-[4/3] bg-zinc-900">
                             <img
                               src={brand.logo}
                               alt={brand.name}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-contain"
                             />
                           </div>
 
@@ -748,7 +748,7 @@ function ServicesPageInner() {
                       <img
                         src={product.image}
                         alt={product.name}
-                        className={`w-full h-40 object-cover rounded-xl bg-zinc-950 transition ${
+                        className={`w-full h-40 object-contain rounded-xl bg-zinc-950 transition ${
                           outOfStock ? 'grayscale opacity-60' : ''
                         }`}
                       />

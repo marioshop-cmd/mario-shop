@@ -111,12 +111,12 @@ export default function Navbar() {
   return (
     <>
       <header className="fixed left-0 right-0 top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/95 px-3 py-3 backdrop-blur-md sm:px-4 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 sm:gap-3">
+        <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-2 sm:gap-3">
           <Link href="/" className="flex shrink-0 items-center gap-2" aria-label="Mario's Shop home">
             <img src="/images/logo.png" alt="" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
           </Link>
 
-          <nav className="hidden items-center gap-6 md:flex" aria-label="Main navigation">
+          <nav className="hidden items-center gap-4 xl:gap-5 2xl:gap-6 md:flex" aria-label="Main navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -135,7 +135,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-            <div className="relative hidden w-52 md:block lg:w-64">
+            <div className="relative hidden w-36 md:block lg:w-44 xl:w-52 2xl:w-64">
               <input
                 type="text"
                 placeholder="What are you looking for?"
@@ -180,7 +180,7 @@ export default function Navbar() {
             <div className="flex items-center gap-1 rounded-full border border-red-500/40 bg-zinc-900/90 px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-1.5">
               <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-red-500/50 bg-red-500/20 text-[10px] font-bold text-red-500">!</span>
               <span className="whitespace-nowrap text-[9px] font-black tracking-wide text-red-500 sm:text-[10px] md:text-xs">
-                {userBalance} B9CHICH <span className="hidden text-[11px] font-normal text-zinc-400 sm:inline">({userBalance} TND)</span>
+                {userBalance} B9CHICH <span className="hidden text-[11px] font-normal text-zinc-400 sm:inline md:hidden 2xl:inline">({userBalance} TND)</span>
               </span>
             </div>
 
