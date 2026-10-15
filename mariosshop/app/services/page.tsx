@@ -646,50 +646,43 @@ function ServicesPageInner() {
                               setSelectedBrand(brand);
                             }
                           }}
-                          className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-xl hover:shadow-red-500/10"
+                          className="group relative block aspect-[4/5] cursor-pointer overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-900 transition duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-xl hover:shadow-red-500/10"
                         >
+                          {/* Poster-style card: the picture fills the whole card and the
+                              name / price sit on a dark fade at the bottom. */}
+                          <img
+                            src={brand.logo}
+                            alt={brand.name}
+                            loading="lazy"
+                            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          />
                           <div
-                            className="relative w-full aspect-square overflow-hidden bg-zinc-900"
-                            style={{ backgroundImage: 'radial-gradient(circle at 50% 25%, rgba(239,68,68,0.20), transparent 65%)' }}
-                          >
-                            <img
-                              src={brand.logo}
-                              alt={brand.name}
-                              loading="lazy"
-                              className="absolute inset-0 h-full w-full object-contain p-3 transition duration-500 group-hover:scale-105 sm:p-4"
-                              style={{ filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))' }}
-                            />
-                            <div
-                              className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
-                              style={{ background: 'linear-gradient(to top, rgba(9,9,11,0.75), transparent)' }}
-                            />
-                          </div>
-
-                          <div className="flex flex-1 flex-col p-3 sm:p-5">
-                            {/* Phones: name, category, price. Desktop: category, name, price, button. */}
-                            <span className="order-2 sm:order-1 mt-1.5 sm:mt-0 inline-flex w-fit rounded-full border border-zinc-700/70 bg-zinc-900/80 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-400">
+                            className="pointer-events-none absolute inset-0"
+                            style={{ background: 'linear-gradient(to top, rgba(9,9,11,0.96) 0%, rgba(9,9,11,0.78) 32%, rgba(9,9,11,0.15) 62%, transparent 100%)' }}
+                          />
+                          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-3 sm:p-4">
+                            <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-200 backdrop-blur-sm">
                               {t(CATEGORY_KEYS[brand.category] || brand.category)}
                             </span>
                             <h3
                               title={brand.name}
-                              className="order-1 sm:order-2 min-h-[2.5rem] sm:min-h-[2.75rem] sm:mt-2 text-sm sm:text-base font-bold leading-snug text-white line-clamp-2 transition group-hover:text-red-400"
+                              className="line-clamp-2 text-[13px] font-extrabold leading-snug text-white drop-shadow sm:line-clamp-3 sm:text-base"
                             >
                               {brand.name}
                             </h3>
-                            {cardPrice > 0 && (
-                              <p className="order-3 mt-auto hidden pt-3 text-xl font-black text-red-500 sm:block">
-                                {cardPrice.toFixed(2)} DT
-                              </p>
-                            )}
-                            {cardPrice > 0 && (
-                              <p className="order-3 mt-auto pt-2 text-lg font-black text-white sm:hidden">
-                                {cardPrice.toFixed(2)}{' '}
-                                <span className="text-[11px] font-semibold text-zinc-400">TND</span>
-                              </p>
-                            )}
-                            <button className="order-4 mt-3 hidden w-full rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-500 active:scale-95 sm:block">
-                              {t('buy_now')}
-                            </button>
+                            <div className="flex items-center justify-between gap-2">
+                              {cardPrice > 0 ? (
+                                <p className="text-base font-black text-white sm:text-xl">
+                                  {cardPrice.toFixed(2)}{' '}
+                                  <span className="text-[10px] font-semibold text-red-400 sm:text-xs">TND</span>
+                                </p>
+                              ) : (
+                                <span />
+                              )}
+                              <span className="hidden rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white shadow-lg shadow-red-600/30 transition group-hover:bg-red-500 sm:inline-flex">
+                                {t('buy_now')}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       );
