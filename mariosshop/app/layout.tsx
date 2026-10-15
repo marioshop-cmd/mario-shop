@@ -1,9 +1,10 @@
+
 'use client';
 
 import React from "react";
 // @ts-ignore CSS side-effect imports are handled by the Next.js bundler.
 import "./globals.css";
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { AuthProvider } from "./context/AuthContext";
 import NotificationToast from "./components/NotificationToast";
 import { CartProvider } from "./context/CartContext";
@@ -21,19 +22,28 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Website Title */}
         <title>Mario's Shop | Premium Digital Marketplace</title>
 
+        {/* SEO Description */}
         <meta
           name="description"
           content="Level up with instant delivery gift cards, gaming top-ups, and subscriptions."
         />
 
+        {/* Responsive Viewport */}
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1"
         />
 
+        {/* Theme Color */}
         <meta name="theme-color" content="#09090b" />
+
+        {/* Mario Shop Favicon */}
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="shortcut icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
       </head>
 
       <body className="flex min-h-screen flex-col bg-zinc-950 pb-20 text-white antialiased md:pb-0">
@@ -53,6 +63,7 @@ export default function RootLayout({
             </CartProvider>
           </AuthProvider>
         </LanguageProvider>
+
         <GoogleAnalytics gaId="G-QRMZVEKJ6D" />
       </body>
     </html>
