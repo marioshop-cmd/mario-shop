@@ -646,37 +646,48 @@ function ServicesPageInner() {
                               setSelectedBrand(brand);
                             }
                           }}
-                          className="bg-zinc-900/30 backdrop-blur-sm border border-zinc-800/50 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl overflow-hidden cursor-pointer transition transform hover:-translate-y-1 group flex flex-col"
+                          className="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-zinc-800/60 bg-zinc-950/60 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-red-500/50 hover:shadow-xl hover:shadow-red-500/10"
                         >
-                          <div className="relative w-full aspect-[4/3] bg-zinc-900">
+                          <div
+                            className="relative w-full aspect-square overflow-hidden bg-zinc-900"
+                            style={{ backgroundImage: 'radial-gradient(circle at 50% 25%, rgba(239,68,68,0.20), transparent 65%)' }}
+                          >
                             <img
                               src={brand.logo}
                               alt={brand.name}
-                              className="absolute inset-0 w-full h-full object-contain"
+                              loading="lazy"
+                              className="absolute inset-0 h-full w-full object-contain p-3 transition duration-500 group-hover:scale-105 sm:p-4"
+                              style={{ filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))' }}
+                            />
+                            <div
+                              className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
+                              style={{ background: 'linear-gradient(to top, rgba(9,9,11,0.75), transparent)' }}
                             />
                           </div>
 
-                          <div className="p-3 sm:p-5 flex flex-col flex-1">
-                            {/* Phones: name first, then category, then a big price (compact
-                                shop-style card). Tablets/desktop keep the original order. */}
-                            <span className="order-2 sm:order-1 mt-0.5 sm:mt-0 text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                          <div className="flex flex-1 flex-col p-3 sm:p-5">
+                            {/* Phones: name, category, price. Desktop: category, name, price, button. */}
+                            <span className="order-2 sm:order-1 mt-1.5 sm:mt-0 inline-flex w-fit rounded-full border border-zinc-700/70 bg-zinc-900/80 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-400">
                               {t(CATEGORY_KEYS[brand.category] || brand.category)}
                             </span>
-                            <h3 className="order-1 sm:order-2 font-bold text-white text-sm sm:text-lg leading-snug sm:mt-1 line-clamp-2 sm:line-clamp-none group-hover:text-red-500 transition">
+                            <h3
+                              title={brand.name}
+                              className="order-1 sm:order-2 min-h-[2.5rem] sm:min-h-[2.75rem] sm:mt-2 text-sm sm:text-base font-bold leading-snug text-white line-clamp-2 transition group-hover:text-red-400"
+                            >
                               {brand.name}
                             </h3>
                             {cardPrice > 0 && (
-                              <p className="order-3 mt-2 text-xl font-black text-red-500 hidden sm:block">
+                              <p className="order-3 mt-auto hidden pt-3 text-xl font-black text-red-500 sm:block">
                                 {cardPrice.toFixed(2)} DT
                               </p>
                             )}
                             {cardPrice > 0 && (
-                              <p className="order-3 mt-2 text-xl font-black text-white sm:hidden">
+                              <p className="order-3 mt-auto pt-2 text-lg font-black text-white sm:hidden">
                                 {cardPrice.toFixed(2)}{' '}
                                 <span className="text-[11px] font-semibold text-zinc-400">TND</span>
                               </p>
                             )}
-                            <button className="order-4 hidden sm:block mt-4 w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition">
+                            <button className="order-4 mt-3 hidden w-full rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-500 active:scale-95 sm:block">
                               {t('buy_now')}
                             </button>
                           </div>

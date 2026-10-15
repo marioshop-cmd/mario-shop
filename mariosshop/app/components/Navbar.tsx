@@ -116,7 +116,7 @@ export default function Navbar() {
             <img src="/images/logo.png" alt="" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
           </Link>
 
-          <nav className="hidden items-center gap-4 xl:gap-5 2xl:gap-6 md:flex" aria-label="Main navigation">
+          <nav className="hidden items-center gap-3 xl:gap-4 2xl:gap-5 lg:flex" aria-label="Main navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -125,7 +125,7 @@ export default function Navbar() {
                   pathname === link.path ? 'text-red-500' : 'text-zinc-400 hover:text-white'
                 }`}
               >
-                {link.icon}
+                <span className="hidden 2xl:inline-flex">{link.icon}</span>
                 <span className="whitespace-nowrap">{link.name}</span>
                 {pathname === link.path && (
                   <span className="absolute bottom-0 left-0 right-0 h-[2.5px] rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
@@ -135,7 +135,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-            <div className="relative hidden w-36 md:block lg:w-44 xl:w-52 2xl:w-64">
+            <div className="relative hidden xl:block xl:w-40 2xl:w-52">
               <input
                 type="text"
                 placeholder="What are you looking for?"
@@ -158,7 +158,7 @@ export default function Navbar() {
               onClick={() => setIsMobileSearchOpen((isOpen) => !isOpen)}
               aria-label="Search"
               aria-expanded={isMobileSearchOpen}
-              className="rounded-xl border border-red-500/40 bg-zinc-900/90 p-2 text-red-500 transition hover:border-red-500 md:hidden"
+              className="rounded-xl border border-red-500/40 bg-zinc-900/90 p-2 text-red-500 transition hover:border-red-500 xl:hidden"
             >
               <Search className="h-5 w-5" />
             </button>
@@ -180,7 +180,7 @@ export default function Navbar() {
             <div className="flex items-center gap-1 rounded-full border border-red-500/40 bg-zinc-900/90 px-1.5 py-1 sm:gap-2 sm:px-3 sm:py-1.5">
               <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-red-500/50 bg-red-500/20 text-[10px] font-bold text-red-500">!</span>
               <span className="whitespace-nowrap text-[9px] font-black tracking-wide text-red-500 sm:text-[10px] md:text-xs">
-                {userBalance} B9CHICH <span className="hidden text-[11px] font-normal text-zinc-400 sm:inline md:hidden 2xl:inline">({userBalance} TND)</span>
+                {userBalance} B9CHICH <span className="hidden text-[11px] font-normal text-zinc-400 sm:inline md:hidden min-[1800px]:inline">({userBalance} TND)</span>
               </span>
             </div>
 
@@ -188,18 +188,19 @@ export default function Navbar() {
               <LanguageSwitcher />
             </div>
 
-            <div className="hidden items-center gap-2 pl-2 md:flex">
+            <div className="hidden items-center gap-2 pl-1 md:flex xl:pl-2">
               {currentUser ? (
                 <Link
                   href="/account"
-                  className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                  aria-label="Profile"
+                  className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition xl:px-3 ${
                     pathname?.startsWith('/account')
                       ? 'border-red-500/60 bg-red-500/10 text-red-400'
                       : 'border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
                   }`}
                 >
                   <User className="h-4 w-4" />
-                  Profile
+                  <span className="hidden xl:inline">Profile</span>
                 </Link>
               ) : (
                 <span className="text-xs font-bold text-zinc-300">Guest</span>
@@ -219,7 +220,7 @@ export default function Navbar() {
       </header>
 
       {isMobileSearchOpen && (
-        <div className="fixed inset-x-0 top-[3.75rem] z-40 border-b border-zinc-800/80 bg-zinc-950/98 px-4 py-3 shadow-xl backdrop-blur-md md:hidden">
+        <div className="fixed inset-x-0 top-[3.75rem] z-40 border-b border-zinc-800/80 bg-zinc-950/98 px-4 py-3 shadow-xl backdrop-blur-md xl:hidden">
           <div className="relative mx-auto max-w-xl">
             <input
               type="text"
