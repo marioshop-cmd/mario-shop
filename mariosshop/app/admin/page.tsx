@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import AdminPinGate from '../components/AdminPinGate';
-import AdminLeaderboardPanel from '../components/AdminLeaderboardPanel';
-import AdminReviewsPanel from '../components/AdminReviewsPanel';
-import { getAllTickets } from '../lib/tickets';
-import AdminTicketCenter from '../components/AdminTicketCenter';
-import { getAllOrders, updateOrderStatus, appendOrderMessage, onOrdersChanged, type Order as ShopOrder, type OrderStatus } from '../lib/orders';
-import { getAllTransactions, onTransactionsChanged, type Transaction } from '../lib/transactions';
+import { useAuth } from '@/app/context/AuthContext';
+import AdminPinGate from '@/app/components/AdminPinGate';
+import AdminLeaderboardPanel from '@/app/components/AdminLeaderboardPanel';
+import AdminReviewsPanel from '@/app/components/AdminReviewsPanel';
+import { getAllTickets } from '@/app/lib/tickets';
+import AdminTicketCenter from '@/app/components/AdminTicketCenter';
+import { getAllOrders, updateOrderStatus, appendOrderMessage, onOrdersChanged, type Order as ShopOrder, type OrderStatus } from '@/app/lib/orders';
+import { getAllTransactions, onTransactionsChanged, type Transaction } from '@/app/lib/transactions';
 import {
   getAllProductsFlat,
   addProduct as addProductToCatalog,
@@ -18,7 +19,7 @@ import {
   onProductsChanged,
   type FlatProduct,
   type ProductVariant,
-} from '../lib/products';
+} from '@/app/lib/products';
 
 type VariantDraft = { id: string; label: string; price: string; badge: string };
 
@@ -82,6 +83,7 @@ const CATEGORIES = [
   "Game Top-Ups",
   "Streaming",
   "Subscriptions",
+  "Currencies and Points",
   "Software",
   "Accounts",
   "Mobile Apps",

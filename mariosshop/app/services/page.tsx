@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../language/LanguageContext';
+import { Coins, Cpu, Gamepad2, Gift, RefreshCw, Smartphone } from 'lucide-react';
 import {
   addReview,
   getAllBrands,
@@ -50,22 +51,31 @@ const CATEGORY_KEYS: Record<string, string> = {
   "Other": "cat_other",
 };
 
-// Quick Tag Pills below Search Bar — each shows a live count of products
-// in that category instead of a decorative emoji icon.
+// Names shown to shoppers. The internal values on the left must match
+// brand.category in the product data, so existing products keep their category.
+const CATEGORY_LABELS: Record<string, string> = {
+  "Gift Cards": "Gaming gift cards",
+  "Gaming": "Gaming",
+  "Game Top-Ups": "Mobile game top-ups",
+  "Currencies and Points": "Currencies and points",
+  "Subscriptions": "Gaming subscriptions",
+  "AI": "AI tools",
+};
+
+// Category pills below the search bar, each with its icon and a live count.
 const QUICK_TAGS = [
-  { labelKey: "tag_subscriptions", category: "Accounts" },
-  { labelKey: "tag_topups", category: "Game Top-Ups" },
-  { labelKey: "tag_giftcards", category: "Gift Cards" },
-  { labelKey: "tag_games", category: "Gaming" },
-  { labelKey: "tag_software", category: "Software" },
-  { labelKey: "tag_streaming", category: "Streaming" },
-  { labelKey: "tag_aitools", category: "AI" },
-  { labelKey: "tag_accounts", category: "Accounts" }
+  { label: "Gaming gift cards", category: "Gift Cards", icon: Gift },
+  { label: "Gaming", category: "Gaming", icon: Gamepad2 },
+  { label: "Mobile game top-ups", category: "Game Top-Ups", icon: Smartphone },
+  { label: "Currencies and points", category: "Currencies and Points", icon: Coins },
+  { label: "Gaming subscriptions", category: "Subscriptions", icon: RefreshCw },
+  { label: "AI tools", category: "AI", icon: Cpu },
 ];
 function ServicesPageInner() {
   const { currentUser } = useAuth();
   const { addToCart, openCart, totalCartItemsCount } = useCart();
   const { t } = useLanguage();
+  const categoryLabel = (cat: string): string => CATEGORY_LABELS[cat] ?? t(CATEGORY_KEYS[cat] || cat);
   const searchParams = useSearchParams();
   const [brands, setBrands] = useState<BrandService[]>([]);
   useEffect(() => {
@@ -260,18 +270,24 @@ function ServicesPageInner() {
         <div className="space-y-10 animate-fadeIn">
          
           {/* Top Bar Navigation */}
-          <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-900 pb-4">
             <button
               onClick={() => {
                 setSelectedProduct(null);
                 setSelectedBrand(null);
               }}
-              className="bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
+              className="shrink-0 whitespace-nowrap bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
             >
-              {t('back_to_products')}
+              <span className="sm:hidden">← Back</span>
+              <span className="hidden sm:inline">{t('back_to_products')}</span>
             </button>
-            <span className="text-xs text-zinc-500 font-mono">
-              Mario's Shop / {selectedBrand?.name || 'Product'} / {selectedProduct.name}
+            {/* The long path is for larger screens only; on phones it just crowded the button. */}
+            <span
+              title={`Mario's Shop / ${selectedBrand?.name || 'Product'} / ${selectedProduct.name}`}
+              className="hidden min-w-0 truncate text-xs text-zinc-500 font-mono md:block"
+            >
+              Mario's Shop / {selectedBrand?.name || 'Product'}
+              {selectedBrand?.name !== selectedProduct.name ? ` / ${selectedProduct.name}` : ''}
             </span>
           </div>
           {/* MAIN PRODUCT ORDER GRID
@@ -420,7 +436,7 @@ function ServicesPageInner() {
               <div className="flex items-center gap-2 flex-wrap">
                 {selectedBrand?.category && (
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-zinc-900 text-zinc-400 border border-zinc-800 rounded-lg">
-                    {t(CATEGORY_KEYS[selectedBrand.category] || selectedBrand.category)}
+                    {categoryLabel(selectedBrand.category)}
                   </span>
                 )}
                 <span
@@ -548,18 +564,20 @@ function ServicesPageInner() {
                 <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
                   {QUICK_TAGS.map((tag, index) => {
                     const isActive = selectedCategory === tag.category;
+                    const Icon = tag.icon;
                     return (
                       <button
-                        key={tag.labelKey}
+                        key={tag.category}
                         onClick={() => setSelectedCategory(tag.category)}
                         style={{ '--beam-delay': `${(index % 4) * 0.6}s` } as React.CSSProperties}
-                        className={`border-beam px-5 py-3 rounded-full text-sm font-bold border transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95 ${
+                        className={`border-beam px-4 py-2.5 sm:px-5 sm:py-3 rounded-full text-sm font-bold border transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95 ${
                           isActive
                             ? 'bg-red-950/40 border-red-500 text-red-500 shadow-lg shadow-red-500/20'
                             : 'bg-zinc-900/80 border-zinc-800 text-zinc-300 hover:border-red-500/50 hover:text-white'
                         }`}
                       >
-                        <span>{t(tag.labelKey)}</span>
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span>{tag.label}</span>
                         <span
                           key={categoryProductCounts[tag.category] || 0}
                           className={`count-pop text-xs font-black rounded-full px-2 py-0.5 min-w-[22px] text-center ${
@@ -606,7 +624,7 @@ function ServicesPageInner() {
                 {selectedCategory !== "All" && (
                   <div className="flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 bg-red-950/40 border border-red-500/40 text-red-400 text-xs font-bold px-3 py-1.5 rounded-full">
-                      {t(CATEGORY_KEYS[selectedCategory] || selectedCategory)}
+                      {categoryLabel(selectedCategory)}
                       <button onClick={() => setSelectedCategory("All")} className="hover:text-white transition">×</button>
                     </span>
                   </div>
@@ -662,7 +680,7 @@ function ServicesPageInner() {
                           />
                           <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-3 sm:p-4">
                             <span className="inline-flex w-fit rounded-full border border-white/20 bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-200 backdrop-blur-sm">
-                              {t(CATEGORY_KEYS[brand.category] || brand.category)}
+                              {categoryLabel(brand.category)}
                             </span>
                             <h3
                               title={brand.name}
