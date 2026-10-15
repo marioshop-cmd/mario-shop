@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../language/LanguageContext';
-import { Coins, Cpu, Gamepad2, Gift, RefreshCw, Smartphone } from 'lucide-react';
+import { Coins, Cpu, Gamepad2, Gift, Headphones, RefreshCw, Smartphone } from 'lucide-react';
 import {
   addReview,
   getAllBrands,
@@ -55,21 +55,23 @@ const CATEGORY_KEYS: Record<string, string> = {
 // brand.category in the product data, so existing products keep their category.
 const CATEGORY_LABELS: Record<string, string> = {
   "Gift Cards": "Gaming gift cards",
-  "Gaming": "Gaming",
+  "General Gift Cards": "Gift cards",
   "Game Top-Ups": "Mobile game top-ups",
   "Currencies and Points": "Currencies and points",
   "Subscriptions": "Gaming subscriptions",
   "AI": "AI tools",
+  "Streaming": "Ears and eyes",
 };
 
 // Category pills below the search bar, each with its icon and a live count.
 const QUICK_TAGS = [
-  { label: "Gaming gift cards", category: "Gift Cards", icon: Gift },
-  { label: "Gaming", category: "Gaming", icon: Gamepad2 },
+  { label: "Gaming gift cards", category: "Gift Cards", icon: Gamepad2 },
   { label: "Mobile game top-ups", category: "Game Top-Ups", icon: Smartphone },
   { label: "Currencies and points", category: "Currencies and Points", icon: Coins },
   { label: "Gaming subscriptions", category: "Subscriptions", icon: RefreshCw },
   { label: "AI tools", category: "AI", icon: Cpu },
+  { label: "Ears and eyes", category: "Streaming", icon: Headphones },
+  { label: "Gift cards", category: "General Gift Cards", icon: Gift },
 ];
 function ServicesPageInner() {
   const { currentUser } = useAuth();
@@ -561,7 +563,7 @@ function ServicesPageInner() {
                   />
                 </div>
                 {/* CATEGORY TAG PILLS BELOW SEARCH BAR */}
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
+                <div className="grid grid-cols-2 gap-2 pt-1 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
                   {QUICK_TAGS.map((tag, index) => {
                     const isActive = selectedCategory === tag.category;
                     const Icon = tag.icon;
@@ -570,14 +572,18 @@ function ServicesPageInner() {
                         key={tag.category}
                         onClick={() => setSelectedCategory(tag.category)}
                         style={{ '--beam-delay': `${(index % 4) * 0.6}s` } as React.CSSProperties}
-                        className={`border-beam px-4 py-2.5 sm:px-5 sm:py-3 rounded-full text-sm font-bold border transition-all duration-200 flex items-center gap-2 hover:scale-105 active:scale-95 ${
+                        className={`border-beam w-full sm:w-auto px-3 py-2.5 sm:px-5 sm:py-3 rounded-2xl sm:rounded-full text-xs sm:text-sm font-bold border transition-all duration-200 flex items-center justify-between sm:justify-center gap-2 hover:scale-105 active:scale-95 ${
+                          index === QUICK_TAGS.length - 1 && QUICK_TAGS.length % 2 === 1 ? 'col-span-2 sm:col-span-1' : ''
+                        } ${
                           isActive
                             ? 'bg-red-950/40 border-red-500 text-red-500 shadow-lg shadow-red-500/20'
                             : 'bg-zinc-900/80 border-zinc-800 text-zinc-300 hover:border-red-500/50 hover:text-white'
                         }`}
                       >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{tag.label}</span>
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="text-left leading-tight">{tag.label}</span>
+                        </span>
                         <span
                           key={categoryProductCounts[tag.category] || 0}
                           className={`count-pop text-xs font-black rounded-full px-2 py-0.5 min-w-[22px] text-center ${

@@ -79,6 +79,7 @@ function recompressDataUrl(dataUrl: string, maxWidth = 400, quality = 0.5): Prom
 const CATEGORIES = [
   "AI",
   "Gift Cards",
+  "General Gift Cards",
   "Gaming",
   "Game Top-Ups",
   "Streaming",

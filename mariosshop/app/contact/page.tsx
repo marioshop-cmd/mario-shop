@@ -329,16 +329,16 @@ function ContactPageContent() {
   );
 
   return (
-    <main className="space-y-12 bg-zinc-950 px-4 pb-16 pt-28 text-white sm:px-6 sm:pt-32 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-12">
+    <main className="space-y-8 bg-zinc-950 px-4 pb-32 pt-24 text-white sm:space-y-12 sm:px-6 sm:pb-16 sm:pt-32 lg:px-8">
+      <div className="mx-auto max-w-5xl space-y-8 sm:space-y-12">
         {/* Social section */}
-        <section className="space-y-6 text-center">
+        <section className="space-y-4 text-center sm:space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
             <StatusDot className="animate-pulse bg-red-500" />
             {t('connect_with_us')}
           </div>
 
-          <h1 className="text-4xl font-black tracking-tight md:text-5xl">
+          <h1 className="text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
             {t('social_media_title_1')}<span className="text-red-500">{t('social_media_title_highlight')}</span>
           </h1>
 
@@ -346,12 +346,12 @@ function ContactPageContent() {
             {t('social_media_sub')}
           </p>
 
-          <div className="mx-auto grid max-w-md grid-cols-1 gap-4 pt-2 sm:grid-cols-2">
+          <div className="mx-auto grid max-w-md grid-cols-2 gap-3 pt-2 sm:gap-4">
             <a
               href="https://discord.gg"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 text-sm font-black tracking-wider text-zinc-200 shadow-lg transition-all duration-300 hover:scale-[1.03] hover:border-indigo-500 hover:text-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 text-xs font-black tracking-wider sm:flex-row sm:gap-3 sm:text-sm text-zinc-200 shadow-lg transition-all duration-300 hover:scale-[1.03] hover:border-indigo-500 hover:text-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
               <DiscordIcon className="h-5 w-5" />
               {t('discord_label')}
@@ -361,7 +361,7 @@ function ContactPageContent() {
               href="https://instagram.com"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center justify-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 text-sm font-black tracking-wider text-zinc-200 shadow-lg transition-all duration-300 hover:scale-[1.03] hover:border-pink-500 hover:text-pink-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
+              className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4 text-xs font-black tracking-wider sm:flex-row sm:gap-3 sm:text-sm text-zinc-200 shadow-lg transition-all duration-300 hover:scale-[1.03] hover:border-pink-500 hover:text-pink-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pink-500"
             >
               <InstagramIcon className="h-5 w-5" />
               {t('instagram_label')}
@@ -370,23 +370,25 @@ function ContactPageContent() {
         </section>
 
         {/* Status bar */}
-        <div className="mx-auto flex max-w-fit flex-wrap items-center justify-center gap-6 rounded-full border border-zinc-800/80 bg-zinc-900/60 px-6 py-2 text-xs font-semibold text-zinc-300">
+        <div className="mx-auto flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border border-zinc-800/80 bg-zinc-900/60 px-4 py-3 text-xs font-semibold text-zinc-300 sm:max-w-fit sm:flex-row sm:gap-6 sm:rounded-full sm:px-6 sm:py-2">
           <div className="flex items-center gap-2">
             <StatusDot className="bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
             <span>{t('all_systems_operational')}</span>
           </div>
-          <div className="text-zinc-600" aria-hidden="true">•</div>
-          <div>
-            {t('avg_response_label')} <span className="font-bold text-white">&lt; 2 hours</span>
-          </div>
-          <div className="text-zinc-600" aria-hidden="true">•</div>
-          <div>
-            {t('satisfaction_label')} <span className="font-bold text-red-500">98%</span>
+          <div className="hidden text-zinc-600 sm:block" aria-hidden="true">•</div>
+          <div className="flex items-center gap-3 sm:contents">
+            <div>
+              {t('avg_response_label')} <span className="font-bold text-white">&lt; 2 hours</span>
+            </div>
+            <div className="text-zinc-600" aria-hidden="true">•</div>
+            <div>
+              {t('satisfaction_label')} <span className="font-bold text-red-500">98%</span>
+            </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Support sections" className="flex flex-wrap justify-center gap-2 sm:gap-3">
+        <div role="tablist" aria-label="Support sections" className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-3">
           {tabs.map((tab) => {
             const selected = activeTab === tab.id;
             return (
@@ -397,7 +399,7 @@ function ContactPageContent() {
                 aria-selected={selected}
                 aria-controls={`${formId}-panel-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2.5 text-xs font-extrabold tracking-wider transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6 ${
+                className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-[11px] font-extrabold leading-tight tracking-wide sm:flex-row sm:gap-2 sm:rounded-full sm:py-2.5 sm:text-xs sm:tracking-wider transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6 ${
                   selected
                     ? 'border-red-500/80 bg-zinc-900 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
                     : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
@@ -411,7 +413,7 @@ function ContactPageContent() {
 
           <Link
             href="/my-tickets"
-            className="flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-xs font-extrabold tracking-wider text-zinc-400 transition-all duration-300 hover:border-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6"
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-zinc-800 bg-zinc-950 px-2 py-3 text-center text-[11px] font-extrabold leading-tight tracking-wide sm:flex-row sm:gap-2 sm:rounded-full sm:py-2.5 sm:text-xs sm:tracking-wider text-zinc-400 transition-all duration-300 hover:border-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:px-6"
           >
             <InboxIcon className="h-4 w-4 text-red-500" />
             {t('my_tickets_tab')}
@@ -424,12 +426,12 @@ function ContactPageContent() {
             role="tabpanel"
             id={`${formId}-panel-help`}
             aria-labelledby={`${formId}-tab-help`}
-            className="grid animate-[fadeIn_0.3s_ease] gap-6 md:grid-cols-2 lg:grid-cols-3"
+            className="grid animate-[fadeIn_0.3s_ease] gap-3 sm:gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
             {HELP_CATEGORIES.map((cat) => (
               <div
                 key={cat.titleKey}
-                className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-6 transition-all duration-300 hover:border-red-500/50"
+                className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/60 p-5 transition-all duration-300 hover:border-red-500/50 sm:p-6"
               >
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/20 bg-red-500/10 text-lg transition-transform group-hover:scale-110">
                   <span aria-hidden="true">{cat.icon}</span>
@@ -443,7 +445,7 @@ function ContactPageContent() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('ticket')}
-                        className="flex w-full items-center gap-2 rounded text-left transition hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                        className="flex w-full items-center gap-2 rounded py-1 text-left transition hover:text-red-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                       >
                         <span className="font-bold text-red-500" aria-hidden="true">•</span>
                         <span>{t(itemKey)}</span>
@@ -462,9 +464,9 @@ function ContactPageContent() {
             role="tabpanel"
             id={`${formId}-panel-ticket`}
             aria-labelledby={`${formId}-tab-ticket`}
-            className="mx-auto max-w-xl animate-[fadeIn_0.3s_ease] rounded-3xl border border-red-500/30 bg-zinc-900/80 p-8 shadow-[0_0_35px_rgba(239,68,68,0.12)]"
+            className="mx-auto max-w-xl animate-[fadeIn_0.3s_ease] rounded-3xl border border-red-500/30 bg-zinc-900/80 p-5 shadow-[0_0_35px_rgba(239,68,68,0.12)] sm:p-8"
           >
-            <h2 className="mb-2 text-center text-2xl font-black text-white">{t('submit_a_ticket_title')}</h2>
+            <h2 className="mb-2 text-center text-xl font-black text-white sm:text-2xl">{t('submit_a_ticket_title')}</h2>
             <p className="mb-6 text-center text-xs text-zinc-400">
               {t('submit_ticket_sub')}
             </p>
