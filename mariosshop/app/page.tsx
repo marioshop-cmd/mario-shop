@@ -465,43 +465,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. LOCAL TUNISIAN PAYMENT METHODS SECTION */}
+      {/* 7. PAYMENT METHODS: title, text and the ADD B9CHICH button on one side,
+              the methods you can use as chips on the other (stacked on phones). */}
       <section className="max-w-7xl mx-auto px-4 mt-20">
-        <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-black tracking-tight text-white flex items-center justify-center gap-2">{t('payment_methods')}</h2>
-            <p className="text-zinc-500 text-sm mt-2">{t('payment_methods_sub')}</p>
-          </div>
-          {/* ONE BUTTON FOR ALL PAYMENT METHODS — moved above the grid so
-              the flow reads: what this is → call to action → the methods
-              you can use, matching the reference layout. */}
-          <div className="mb-8 flex justify-center">
-            <Link href="/tickets"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full border-2 border-red-500 bg-red-500/10 text-red-400 font-black tracking-wide transition duration-200 hover:bg-red-600 hover:text-white hover:shadow-lg hover:shadow-red-600/20 active:scale-95"
-            >
-              💰 ADD B9CHICH <span className="text-base">→</span>
-            </Link>
-          </div>
+        <div className="relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 p-6 shadow-2xl backdrop-blur-md md:p-10">
+          <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-red-600/15 blur-[90px]" />
 
-          {/* All payment methods now grouped into ONE compact tile grid
-              instead of three separate full-size cards — on mobile this
-              was previously three tall stacked blocks; now it's a tidy
-              2-column (3-column on larger screens) grid inside the same
-              outer container. */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 max-w-2xl mx-auto">
-            {paymentTiles.map((payment) => (
-              <div
-                key={payment.id}
-                className="group flex flex-col items-center text-center gap-3 bg-zinc-900/40 border border-zinc-800/60 hover:border-red-500/40 hover:shadow-lg hover:shadow-red-500/10 rounded-2xl p-4 sm:p-5 transition duration-300"
+          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-md text-center lg:text-left">
+              <h2 className="text-2xl font-black tracking-tight text-white md:text-3xl">{t('payment_methods')}</h2>
+              <p className="mt-2 text-sm text-zinc-500">{t('payment_methods_sub')}</p>
+
+              {/* The ADD B9CHICH button, unchanged link (/tickets) */}
+              <Link
+                href="/tickets"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-7 py-3.5 text-sm font-black tracking-wide text-white shadow-lg shadow-red-600/30 transition duration-200 hover:bg-red-500 active:scale-95 sm:w-auto"
               >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-zinc-900/80 flex items-center justify-center border border-zinc-800 group-hover:border-red-500/40 shadow-inner overflow-hidden p-2.5 transition duration-300">
-                  <img src={payment.logo} alt={payment.name} className="w-full h-full object-contain drop-shadow-lg" />
+                💰 ADD B9CHICH <span className="text-base">→</span>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-center lg:max-w-xl lg:justify-end">
+              {paymentTiles.map((payment) => (
+                <div
+                  key={payment.id}
+                  className="group flex items-center gap-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/50 px-3 py-2.5 transition duration-300 hover:border-red-500/50 hover:bg-zinc-900 sm:px-4"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-zinc-950/70 p-1.5 ring-1 ring-zinc-800 transition group-hover:ring-red-500/40">
+                    <img src={payment.logo} alt="" className="h-full w-full object-contain" />
+                  </span>
+                  <span className="min-w-0 truncate text-sm font-bold text-zinc-100">{payment.name}</span>
                 </div>
-                <h3 className="text-xs sm:text-sm font-bold tracking-tight text-zinc-100 group-hover:text-white transition">
-                  {payment.name}
-                </h3>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
