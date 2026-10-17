@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+}
+
+/* Tailwind CSS v4 @theme at-rule is valid, but generic CSS linters still flag it. */
+/* css-lint-disable unknownAtRules */
+/* stylelint-disable-next-line at-rule-no-unknown */
+@theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -83,4 +89,30 @@ body::before {
 @media (max-width: 767px) {
   .reviews-track .review-card { flex: 0 0 260px; }
   .reviews-track { animation-duration: 30s; }
+}
+
+/* ===== Scroll performance ===== */
+
+/* The fixed starfield gets its own layer, so scrolling does not repaint it. */
+body::before {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Blurring what is behind a panel is the most expensive thing to redraw while
+   scrolling. Phones skip it (the panels are already dark enough). */
+@media (max-width: 767px) {
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Home sections below the screen are not drawn until you scroll near them. */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 480px;
 }

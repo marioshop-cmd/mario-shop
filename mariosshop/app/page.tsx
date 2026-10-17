@@ -264,6 +264,7 @@ export default function HomePage() {
           flex-wrap: nowrap;
           width: max-content;
           animation: marqueeMove 40s linear infinite !important;
+          will-change: transform;
         }
         .marquee-container:hover {
           animation-play-state: paused !important;
@@ -388,7 +389,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. INFINITE MOVING REVIEWS SECTION */}
-      <section className="max-w-7xl mx-auto px-4 mt-20">
+      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
           <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -436,7 +437,7 @@ export default function HomePage() {
       
 
       {/* 6. HOW IT WORKS SECTION */}
-      <section className="max-w-7xl mx-auto px-4 mt-20">
+      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black tracking-tight text-white">{t('how_to_order')}</h2>
@@ -467,7 +468,7 @@ export default function HomePage() {
 
       {/* 7. PAYMENT METHODS: title, text and the ADD B9CHICH button on one side,
               the methods you can use as chips on the other (stacked on phones). */}
-      <section className="max-w-7xl mx-auto px-4 mt-20">
+      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
         <div className="relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 p-6 shadow-2xl backdrop-blur-md md:p-10">
           <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-red-600/15 blur-[90px]" />
 
@@ -546,7 +547,7 @@ export default function HomePage() {
       )}
 
       {/* 5. JOIN THE RANKS BANNER (top clients live on /leaderboard) */}
-      <section className="max-w-5xl mx-auto px-4 mt-20">
+      <section className="cv-auto max-w-5xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
           <div className="pointer-events-none absolute -right-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-red-600/15 blur-[90px]" />
 
