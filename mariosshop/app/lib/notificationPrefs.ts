@@ -68,11 +68,11 @@ export function setNotifStatus(email: string, status: 'enabled' | 'disabled'): v
 
 export type NotifPreset = 'all' | 'discounts' | 'products' | 'orders';
 
-export const PRESETS: { value: NotifPreset; label: string; hint: string }[] = [
-  { value: 'all', label: 'Everything', hint: 'Orders, discounts and new products' },
-  { value: 'discounts', label: 'Only discounts', hint: 'Promotions and offers' },
-  { value: 'products', label: 'Only new products', hint: 'When something new arrives' },
-  { value: 'orders', label: 'Only order updates', hint: 'Status changes on your orders' },
+export const PRESETS: { value: NotifPreset; labelKey: string; hintKey: string }[] = [
+  { value: 'all', labelKey: 'notifp_preset_all', hintKey: 'notifp_preset_all_hint' },
+  { value: 'discounts', labelKey: 'notifp_preset_discounts', hintKey: 'notifp_preset_discounts_hint' },
+  { value: 'products', labelKey: 'notifp_preset_products', hintKey: 'notifp_preset_products_hint' },
+  { value: 'orders', labelKey: 'notifp_preset_orders', hintKey: 'notifp_preset_orders_hint' },
 ];
 
 export function prefsForPreset(preset: NotifPreset): NotificationPrefs {

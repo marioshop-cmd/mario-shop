@@ -51,33 +51,34 @@ const CATEGORY_KEYS: Record<string, string> = {
   "Other": "cat_other",
 };
 
-// Names shown to shoppers. The internal values on the left must match
-// brand.category in the product data, so existing products keep their category.
-const CATEGORY_LABELS: Record<string, string> = {
-  "Gift Cards": "Gaming gift cards",
-  "General Gift Cards": "Gift cards",
-  "Game Top-Ups": "Mobile game top-ups",
-  "Currencies and Points": "Currencies and points",
-  "Subscriptions": "Gaming subscriptions",
-  "AI": "AI tools",
-  "Streaming": "Ears and eyes",
+// Translation keys for the category names. The internal values on the left must
+// match brand.category in the product data, so existing products keep their category.
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  "Gift Cards": "cat_gaming_giftcards",
+  "General Gift Cards": "cat_general_giftcards",
+  "Game Top-Ups": "cat_mobile_topups",
+  "Currencies and Points": "cat_currencies_points",
+  "Subscriptions": "cat_gaming_subscriptions",
+  "AI": "cat_ai_tools",
+  "Streaming": "cat_ears_eyes",
 };
 
 // Category pills below the search bar, each with its icon and a live count.
 const QUICK_TAGS = [
-  { label: "Gaming gift cards", category: "Gift Cards", icon: Gamepad2 },
-  { label: "Mobile game top-ups", category: "Game Top-Ups", icon: Smartphone },
-  { label: "Currencies and points", category: "Currencies and Points", icon: Coins },
-  { label: "Gaming subscriptions", category: "Subscriptions", icon: RefreshCw },
-  { label: "AI tools", category: "AI", icon: Cpu },
-  { label: "Ears and eyes", category: "Streaming", icon: Headphones },
-  { label: "Gift cards", category: "General Gift Cards", icon: Gift },
+  { labelKey: "cat_gaming_giftcards", category: "Gift Cards", icon: Gamepad2 },
+  { labelKey: "cat_mobile_topups", category: "Game Top-Ups", icon: Smartphone },
+  { labelKey: "cat_currencies_points", category: "Currencies and Points", icon: Coins },
+  { labelKey: "cat_gaming_subscriptions", category: "Subscriptions", icon: RefreshCw },
+  { labelKey: "cat_ai_tools", category: "AI", icon: Cpu },
+  { labelKey: "cat_ears_eyes", category: "Streaming", icon: Headphones },
+  { labelKey: "cat_general_giftcards", category: "General Gift Cards", icon: Gift },
 ];
+
 function ServicesPageInner() {
   const { currentUser } = useAuth();
   const { addToCart, openCart, totalCartItemsCount } = useCart();
   const { t } = useLanguage();
-  const categoryLabel = (cat: string): string => CATEGORY_LABELS[cat] ?? t(CATEGORY_KEYS[cat] || cat);
+  const categoryLabel = (cat: string): string => t(CATEGORY_LABEL_KEYS[cat] || CATEGORY_KEYS[cat] || cat);
   const searchParams = useSearchParams();
   const [brands, setBrands] = useState<BrandService[]>([]);
   useEffect(() => {
@@ -177,6 +178,14 @@ function ServicesPageInner() {
       setSelectedVariantId(product.variants[0].id);
     }
   }, [brands, searchParams]);
+
+  // Opened from the home page "Browse by category" tiles: /services?category=AI
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category && QUICK_TAGS.some((tag) => tag.category === category)) {
+      setSelectedCategory(category);
+    }
+  }, [searchParams]);
   const [sortOrder, setSortOrder] = useState<"default" | "name-asc" | "most-products">("default");
   // Filter Brands
   const filteredBrands = brands
@@ -280,7 +289,7 @@ function ServicesPageInner() {
               }}
               className="shrink-0 whitespace-nowrap bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-zinc-300 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2"
             >
-              <span className="sm:hidden">← Back</span>
+              <span className="sm:hidden">{t('back_short')}</span>
               <span className="hidden sm:inline">{t('back_to_products')}</span>
             </button>
             {/* The long path is for larger screens only; on phones it just crowded the button. */}
@@ -401,7 +410,7 @@ function ServicesPageInner() {
                     {selectedProduct.stock <= 0
                       ? t('sold_out').toUpperCase()
                       : currentPriceNumeric <= 0
-                        ? 'PRICE NOT SET'
+                        ? t('price_not_set')
                         : `${t('add_to_cart')} 🧺`}
                   </span>
                 </button>
@@ -582,7 +591,7 @@ function ServicesPageInner() {
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           <Icon className="h-4 w-4 shrink-0" />
-                          <span className="text-left leading-tight">{tag.label}</span>
+                          <span className="text-left leading-tight">{t(tag.labelKey)}</span>
                         </span>
                         <span
                           key={categoryProductCounts[tag.category] || 0}

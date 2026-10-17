@@ -663,4 +663,62 @@ export const translations: Record<string, Record<Language, string>> = {
   },
   notif_popup_later: { tn: 'يمكن بعد', en: 'Maybe Later', fr: 'Plus tard' },
   notif_popup_enable: { tn: 'فعّل', en: 'Enable', fr: 'Activer' },
+
+  // Service categories (pills under the search bar)
+  cat_gaming_giftcards: { tn: "كارتات هدايا الألعاب", en: "Gaming gift cards", fr: "Cartes cadeaux gaming" },
+  cat_mobile_topups: { tn: "شحن ألعاب الموبايل", en: "Mobile game top-ups", fr: "Recharges de jeux mobiles" },
+  cat_currencies_points: { tn: "عملات و نقاط", en: "Currencies and points", fr: "Monnaies et points" },
+  cat_gaming_subscriptions: { tn: "اشتراكات الألعاب", en: "Gaming subscriptions", fr: "Abonnements gaming" },
+  cat_ai_tools: { tn: "أدوات الذكاء الاصطناعي", en: "AI tools", fr: "Outils IA" },
+  cat_ears_eyes: { tn: "الودنين و العينين", en: "Ears and eyes", fr: "Oreilles et yeux" },
+  cat_general_giftcards: { tn: "كارتات هدية", en: "Gift cards", fr: "Cartes cadeaux" },
+
+  // Services page (new)
+  back_short: { tn: "← رجوع", en: "← Back", fr: "← Retour" },
+  price_not_set: { tn: "السوم موش محدد", en: "PRICE NOT SET", fr: "PRIX NON DÉFINI" },
+
+  // Referral page (coming soon)
+  back_to_home: { tn: "← ارجع للرئيسية", en: "← Back to Home", fr: "← Retour à l'accueil" },
+  referral_coming_soon: { tn: "قريب", en: "Coming Soon", fr: "Bientôt disponible" },
+  referral_program_title: { tn: "برنامج جيب أصحابك", en: "Referral Program", fr: "Programme de parrainage" },
+  referral_program_desc: { tn: "عيّط لأصحابك، اربح B9CHICH و خوذ مكافأة كل ما يشريو. قاعدين نكملو في اللمسات الأخيرة — ارجع قريب.", en: "Invite your friends, earn B9CHICH, and get rewarded every time they shop. We're putting the finishing touches on it — check back soon.", fr: "Invitez vos amis, gagnez des B9CHICH et soyez récompensé à chaque achat. Nous peaufinons les derniers détails — revenez bientôt." },
+  referral_step_label: { tn: "الخطوة", en: "Step", fr: "Étape" },
+  referral_step1_title: { tn: "شارك اللينك متاعك", en: "Share your link", fr: "Partagez votre lien" },
+  referral_step1_text: { tn: "انسخ لينك الإحالة متاعك و ابعثو لأصحابك.", en: "Copy your personal referral link and send it to your friends.", fr: "Copiez votre lien de parrainage personnel et envoyez-le à vos amis." },
+  referral_step2_title: { tn: "صاحبك يشري", en: "Friend shops", fr: "Votre ami achète" },
+  referral_step2_text: { tn: "صاحبك يسجل باللينك متاعك و يعمل شراء.", en: "Your friend signs up with your link and makes a purchase.", fr: "Votre ami s'inscrit avec votre lien et effectue un achat." },
+  referral_step3_title: { tn: "اثنينكم تربحو", en: "You both earn", fr: "Vous gagnez tous les deux" },
+  referral_step3_text: { tn: "اثنينكم تاخذو مكافأة بـ B9CHICH.", en: "You both get rewarded in B9CHICH.", fr: "Vous êtes tous les deux récompensés en B9CHICH." },
+
+  // Join the Ranks banner and Leaderboard page
+  ranks_title: { tn: "ادخل الترتيب", en: "Join the Ranks", fr: "Rejoignez le classement" },
+  ranks_desc: { tn: "نافس اللاعبين الآخرين، اطلع مع كل طلب، و وصل للقمة في الترتيب!", en: "Compete with other players, climb with every order, and reach the top of the leaderboard!", fr: "Rivalisez avec les autres joueurs, grimpez à chaque commande et atteignez le haut du classement !" },
+  ranks_view_button: { tn: "شوف الترتيب", en: "View Leaderboard", fr: "Voir le classement" },
+  lb_title_1: { tn: "ترتيب ", en: "Ranking ", fr: "Classement " },
+  lb_title_2: { tn: "المتصدرين", en: "Leaderboard", fr: "général" },
+  lb_subtitle: { tn: "شوف شكون في القمة. اربح XP مع كل شراء باش تطلع في الترتيب!", en: "See who's at the top. Earn XP with every purchase to climb the ranks!", fr: "Découvrez qui est en tête. Gagnez de l'XP à chaque achat pour grimper dans le classement !" },
+  lb_table_title: { tn: "أفضل 100 لاعب", en: "Top 100 Players", fr: "Top 100 des joueurs" },
+  lb_table_sub: { tn: "أكثر الكليونات وفاء في الشوب متاعنا.", en: "The most dedicated clients in our shop.", fr: "Les clients les plus fidèles de notre boutique." },
+  lb_col_rank: { tn: "الرتبة", en: "Rank", fr: "Rang" },
+  lb_col_player: { tn: "اللاعب", en: "Player", fr: "Joueur" },
+  lb_col_title: { tn: "اللقب", en: "Title", fr: "Titre" },
+  lb_col_xp: { tn: "مجموع XP", en: "Total XP", fr: "XP total" },
+  lb_loading: { tn: "نحمّل…", en: "Loading…", fr: "Chargement…" },
+  lb_empty: { tn: "ما فما حتى واحد في الترتيب توا. كون الأول!", en: "Nobody is on the board yet. Be the first!", fr: "Personne n'est encore au classement. Soyez le premier !" },
+
+  // Notification prompt (Enable / Later) and mini pop-up
+  notifp_choose_title: { tn: "علاش تحب نعلموك؟", en: "What do you want to hear about?", fr: "De quoi voulez-vous être informé ?" },
+  notifp_choose_sub: { tn: "تنجم تبدل هذا في أي وقت من الحساب متاعك.", en: "You can change this any time in your account.", fr: "Vous pouvez modifier cela à tout moment dans votre compte." },
+  notifp_confirm: { tn: "أكّد", en: "Confirm", fr: "Confirmer" },
+  notifp_preset_all: { tn: "كل شي", en: "Everything", fr: "Tout" },
+  notifp_preset_all_hint: { tn: "الطلبات و التخفيضات و المنتجات الجداد", en: "Orders, discounts and new products", fr: "Commandes, promotions et nouveaux produits" },
+  notifp_preset_discounts: { tn: "التخفيضات برك", en: "Only discounts", fr: "Uniquement les promotions" },
+  notifp_preset_discounts_hint: { tn: "العروض و التخفيضات", en: "Promotions and offers", fr: "Promotions et offres" },
+  notifp_preset_products: { tn: "المنتجات الجداد برك", en: "Only new products", fr: "Uniquement les nouveaux produits" },
+  notifp_preset_products_hint: { tn: "كي يوصل شي جديد", en: "When something new arrives", fr: "Quand quelque chose de nouveau arrive" },
+  notifp_preset_orders: { tn: "تحديثات الطلبات برك", en: "Only order updates", fr: "Uniquement le suivi des commandes" },
+  notifp_preset_orders_hint: { tn: "تغييرات حالة الطلبات متاعك", en: "Status changes on your orders", fr: "Changements de statut de vos commandes" },
+  notifp_enabled_flash: { tn: "الإشعارات مفعّلة. باش تجيك إشعار صغير كي يوصل شي جديد.", en: "Notifications are on. You will get a short pop-up when something new arrives.", fr: "Notifications activées. Vous recevrez une courte alerte quand il y aura du nouveau." },
+  acct_popup_title: { tn: "إشعارات منبثقة", en: "Pop-up notifications", fr: "Notifications pop-up" },
+  acct_popup_desc: { tn: "إشعار صغير يطلع وقت تتصفح الشوب كي نبعثو حاجة جديدة.", en: "A short pop-up while you browse the shop when we send something new.", fr: "Une courte alerte pendant votre navigation quand nous envoyons du nouveau." },
 };

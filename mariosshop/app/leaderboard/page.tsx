@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Crown, Trophy, Hexagon } from 'lucide-react';
+import { useLanguage } from '../language/LanguageContext';
 import { getLeaderboard, onLeaderboardChanged, titleForXp, type LeaderboardEntry } from '../lib/leaderboard';
 
 const AVATAR_COLORS = [
@@ -15,6 +16,7 @@ const AVATAR_COLORS = [
 ];
 
 export default function LeaderboardPage() {
+  const { t } = useLanguage();
   const [players, setPlayers] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,32 +37,32 @@ export default function LeaderboardPage() {
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 px-6 py-12 text-center shadow-2xl backdrop-blur-md">
           <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-96 -translate-x-1/2 rounded-full bg-red-600/20 blur-[100px]" />
           <h1 className="relative text-4xl font-black tracking-tight sm:text-5xl">
-            Ranking <span className="text-red-500">Leaderboard</span>
+            {t('lb_title_1')}<span className="text-red-500">{t('lb_title_2')}</span>
           </h1>
           <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400 sm:text-base">
-            See who&apos;s at the top. Earn XP with every purchase to climb the ranks!
+            {t('lb_subtitle')}
           </p>
         </div>
 
         {/* Table */}
         <div className="overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 shadow-2xl backdrop-blur-md">
           <div className="px-6 pb-4 pt-6 sm:px-8">
-            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">Top 100 Players</h2>
-            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">The most dedicated clients in our shop.</p>
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{t('lb_table_title')}</h2>
+            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">{t('lb_table_sub')}</p>
           </div>
 
           <div className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/80 px-4 py-3 text-xs font-bold text-zinc-500 sm:grid-cols-[5rem_1fr_9rem_8rem] sm:px-8">
-            <span>Rank</span>
-            <span>Player</span>
-            <span className="hidden text-center sm:block">Title</span>
-            <span className="text-right">Total XP</span>
+            <span>{t('lb_col_rank')}</span>
+            <span>{t('lb_col_player')}</span>
+            <span className="hidden text-center sm:block">{t('lb_col_title')}</span>
+            <span className="text-right">{t('lb_col_xp')}</span>
           </div>
 
           {loading ? (
-            <p className="px-6 py-16 text-center text-sm text-zinc-500">Loading…</p>
+            <p className="px-6 py-16 text-center text-sm text-zinc-500">{t('lb_loading')}</p>
           ) : players.length === 0 ? (
             <p className="px-6 py-16 text-center text-sm text-zinc-500">
-              Nobody is on the board yet. Be the first!
+              {t('lb_empty')}
             </p>
           ) : (
             <ul>
@@ -128,7 +130,7 @@ export default function LeaderboardPage() {
             href="/"
             className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-600/20 transition hover:bg-red-500 active:scale-95"
           >
-            ← Back to Home
+            {t('back_to_home')}
           </Link>
         </div>
       </div>

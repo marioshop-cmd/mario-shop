@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import FaqSection from './components/FaqSection';
 import FeaturedProducts from './components/FeaturedProducts';
+import CategoryBrowser from './components/CategoryBrowser';
 import { useLanguage } from './language/LanguageContext';
 import { getLeaderboard, onLeaderboardChanged, type LeaderboardEntry } from './lib/leaderboard';
 import { addHomeReview, getHomeReviews, onHomeReviewsChanged, type HomeReview } from './lib/homeReviews';
@@ -346,6 +347,11 @@ export default function HomePage() {
         <FeaturedProducts />
       </section>
 
+      {/* 1b. BROWSE BY CATEGORY */}
+      <section className="max-w-7xl mx-auto px-4 mb-12">
+        <CategoryBrowser />
+      </section>
+
       {/* 2. CALL TO ACTION BUTTONS */}
       <section className="max-w-7xl mx-auto px-4 mb-16 flex justify-center">
         <div className="flex flex-col sm:flex-row gap-4">
@@ -550,9 +556,9 @@ export default function HomePage() {
 
           <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 text-center md:text-left">
             <div className="max-w-xl">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">Join the Ranks</h2>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">{t('ranks_title')}</h2>
               <p className="mt-3 text-sm md:text-base leading-relaxed text-zinc-400">
-                Compete with other players, climb with every order, and reach the top of the leaderboard!
+                {t('ranks_desc')}
               </p>
             </div>
 
@@ -582,7 +588,7 @@ export default function HomePage() {
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-red-600/25 transition active:scale-95"
               >
                 <span aria-hidden="true">🏆</span>
-                View Leaderboard
+                {t('ranks_view_button')}
               </Link>
             </div>
           </div>

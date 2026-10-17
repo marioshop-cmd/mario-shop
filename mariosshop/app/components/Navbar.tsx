@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getAllProductsFlat, onProductsChanged, type FlatProduct } from '../lib/products';
 import LanguageSwitcher from '../language/LanguageSwitcher';
+import { useLanguage } from '../language/LanguageContext';
 
 const navLinks = [
   { name: 'HOME', path: '/', icon: <Home className="h-4 w-4" /> },
@@ -32,6 +33,7 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
   const { currentUser, logoutUser } = useAuth();
   const { totalCartItemsCount, openCart } = useCart();
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,7 +194,7 @@ export default function Navbar() {
               {currentUser ? (
                 <Link
                   href="/account"
-                  aria-label="Profile"
+                  aria-label={t('acct_tab_profile')}
                   className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition xl:px-3 ${
                     pathname?.startsWith('/account')
                       ? 'border-red-500/60 bg-red-500/10 text-red-400'
@@ -200,7 +202,7 @@ export default function Navbar() {
                   }`}
                 >
                   <User className="h-4 w-4" />
-                  <span className="hidden xl:inline">Profile</span>
+                  <span className="hidden xl:inline">{t('acct_tab_profile')}</span>
                 </Link>
               ) : (
                 <span className="text-xs font-bold text-zinc-300">Guest</span>

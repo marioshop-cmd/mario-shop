@@ -1,277 +1,138 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../context/AuthContext';
+import Link from 'next/link';
+import { Crown, Trophy, Hexagon } from 'lucide-react';
 import { useLanguage } from '../../language/LanguageContext';
-import AccountTabs from '../../components/AccountTabs';
-import { Bell, Check } from 'lucide-react';
-import {
-  getNotificationsForEmail,
-  onNotificationsChanged,
-  type AppNotification,
-} from '../../lib/notifications';
-import { getNotifStatus, setNotifStatus, type NotifStatus } from '../../lib/notificationPrefs';
+import { getLeaderboard, onLeaderboardChanged, titleForXp, type LeaderboardEntry } from '../../lib/leaderboard';
 
-function formatNotifTime(iso: string): string {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso;
-  }
-}
+const AVATAR_COLORS = [
+  'from-amber-400 to-red-600',
+  'from-zinc-400 to-zinc-700',
+  'from-orange-500 to-red-900',
+  'from-red-500 to-rose-900',
+  'from-rose-500 to-zinc-800',
+  'from-red-600 to-zinc-900',
+];
 
-type NotificationPrefs = {
-  orderUpdates: boolean;
-  promotions: boolean;
-  newProducts: boolean;
-  securityAlerts: boolean;
-};
-
-const DEFAULT_PREFS: NotificationPrefs = {
-  orderUpdates: true,
-  promotions: false,
-  newProducts: true,
-  securityAlerts: true,
-};
-
-const STORAGE_KEY = 'notification-prefs';
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onChange}
-      className={`relative w-11 h-6 rounded-full transition-colors ${
-        checked ? 'bg-red-600' : 'bg-zinc-700'
-      }`}
-      aria-pressed={checked}
-    >
-      <span
-        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-          checked ? 'translate-x-5' : 'translate-x-0'
-        }`}
-      />
-    </button>
-  );
-}
-
-export default function NotificationsPage() {
-  const { currentUser } = useAuth();
+export default function LeaderboardPage() {
   const { t } = useLanguage();
-  const router = useRouter();
+  const [players, setPlayers] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentUser === null) {
-      const timer = setTimeout(() => {
-        if (!currentUser) router.replace('/login');
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [currentUser, router]);
-
-  const [prefs, setPrefs] = useState<NotificationPrefs>(DEFAULT_PREFS);
-  const [browserPermission, setBrowserPermission] = useState<NotificationPermission | 'unsupported'>('default');
-  const [saved, setSaved] = useState(false);
-
-  // Master switch for the in-site pop-ups (the "Enable / Later" question).
-  const [popupStatus, setPopupStatus] = useState<NotifStatus>(null);
-  useEffect(() => {
-    if (currentUser?.email) setPopupStatus(getNotifStatus(currentUser.email));
-  }, [currentUser?.email]);
-
-  const togglePopups = () => {
-    if (!currentUser?.email) return;
-    const next = popupStatus === 'enabled' ? 'disabled' : 'enabled';
-    setNotifStatus(currentUser.email, next);
-    setPopupStatus(next);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  };
-
-  const [received, setReceived] = useState<AppNotification[]>([]);
-  const refreshReceived = () => {
-    if (currentUser) {
-      getNotificationsForEmail(currentUser.email).then(setReceived);
-    }
-  };
-  useEffect(() => {
-    refreshReceived();
-    const unsubscribe = onNotificationsChanged(refreshReceived);
-    return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
-
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setPrefs(JSON.parse(stored));
-      } catch {
-        // ignore malformed storage
-      }
-    }
-    if (typeof Notification !== 'undefined') {
-      setBrowserPermission(Notification.permission);
-    } else {
-      setBrowserPermission('unsupported');
-    }
+    const refresh = () => {
+      getLeaderboard(100)
+        .then(setPlayers)
+        .finally(() => setLoading(false));
+    };
+    refresh();
+    return onLeaderboardChanged(refresh);
   }, []);
 
-  const toggle = (key: keyof NotificationPrefs) => {
-    setPrefs((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  };
-
-  const requestBrowserPermission = async () => {
-    if (typeof Notification === 'undefined') return;
-    const result = await Notification.requestPermission();
-    setBrowserPermission(result);
-  };
-
-  if (!currentUser) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
-        <p className="text-xs text-zinc-500">Loading…</p>
-      </main>
-    );
-  }
-
   return (
-    <main className="min-h-screen bg-zinc-950 text-white px-4 py-10 pt-28 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl">
-        <AccountTabs />
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 mb-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-red-600/15 border border-red-500/40 flex items-center justify-center shrink-0">
-              <Bell className="w-4.5 h-4.5 text-red-500" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white">{t('acct_browser_notif_title')}</h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                {t('acct_browser_notif_desc')}
-              </p>
-            </div>
-          </div>
-
-          {browserPermission === 'unsupported' && (
-            <p className="text-xs text-zinc-500">{t('acct_notif_unsupported')}</p>
-          )}
-          {browserPermission === 'granted' && (
-            <div>
-              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-2">
-                <Check className="w-3.5 h-3.5" /> {t('acct_notif_enabled')}
-              </div>
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                To turn these off, use the toggles below to control what you get notified about — or
-                block notifications for this site from your browser's own settings (usually the icon
-                just left of the address bar). No website, including this one, can turn browser
-                notifications back off on your behalf once you've allowed them.
-              </p>
-            </div>
-          )}
-          {browserPermission === 'denied' && (
-            <p className="text-xs text-red-400 font-semibold">
-              {t('acct_notif_blocked')}
-            </p>
-          )}
-          {browserPermission === 'default' && (
-            <button
-              onClick={requestBrowserPermission}
-              className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition"
-            >
-              {t('acct_enable_browser_notif')}
-            </button>
-          )}
-        </section>
-
-        {received.length > 0 && (
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 mb-6">
-            <h2 className="text-sm font-bold text-white mb-1">{t('acct_recent_notif_title')}</h2>
-            <p className="text-xs text-zinc-500 mb-4">{t('acct_recent_notif_desc')}</p>
-
-            <div className="space-y-2">
-              {received.map((n) => (
-                <div key={n.id} className="rounded-xl border border-zinc-800 bg-zinc-950 p-3.5">
-                  <p className="text-sm font-bold text-white">{n.title}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">{n.message}</p>
-                  <p className="text-[10px] text-zinc-600 mt-1.5">{formatNotifTime(n.createdAt)}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 mb-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-sm font-bold text-white">Pop-up notifications</h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
-                A short pop-up while you browse the shop when we send something new.
-              </p>
-            </div>
-            <Toggle checked={popupStatus === 'enabled'} onChange={togglePopups} />
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6">
-          <h2 className="text-sm font-bold text-white mb-1">{t('acct_notif_prefs_title')}</h2>
-          <p className="text-xs text-zinc-500 mb-5">
-            Turn individual notification types on or off.
-            {saved && <span className="text-emerald-400 font-semibold ml-2">Saved</span>}
+    <main className="min-h-screen bg-zinc-950 px-4 pb-20 pt-28 text-white font-sans sm:pt-32">
+      <div className="mx-auto max-w-5xl">
+        {/* Hero */}
+        <div className="relative mb-10 overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 px-6 py-12 text-center shadow-2xl backdrop-blur-md">
+          <div className="pointer-events-none absolute left-1/2 top-0 h-48 w-96 -translate-x-1/2 rounded-full bg-red-600/20 blur-[100px]" />
+          <h1 className="relative text-4xl font-black tracking-tight sm:text-5xl">
+            {t('lb_title_1')}<span className="text-red-500">{t('lb_title_2')}</span>
+          </h1>
+          <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400 sm:text-base">
+            {t('lb_subtitle')}
           </p>
+        </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">{t('acct_pref_orders')}</p>
-                <p className="text-xs text-zinc-500">{t('acct_pref_orders_desc')}</p>
-              </div>
-              <Toggle checked={prefs.orderUpdates} onChange={() => toggle('orderUpdates')} />
-            </div>
-
-            <div className="h-px bg-zinc-800" />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">{t('acct_pref_promos')}</p>
-                <p className="text-xs text-zinc-500">{t('acct_pref_promos_desc')}</p>
-              </div>
-              <Toggle checked={prefs.promotions} onChange={() => toggle('promotions')} />
-            </div>
-
-            <div className="h-px bg-zinc-800" />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">{t('acct_pref_new_products')}</p>
-                <p className="text-xs text-zinc-500">{t('acct_pref_new_products_desc')}</p>
-              </div>
-              <Toggle checked={prefs.newProducts} onChange={() => toggle('newProducts')} />
-            </div>
-
-            <div className="h-px bg-zinc-800" />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-white">{t('acct_pref_security')}</p>
-                <p className="text-xs text-zinc-500">{t('acct_pref_security_desc')}</p>
-              </div>
-              <Toggle checked={prefs.securityAlerts} onChange={() => toggle('securityAlerts')} />
-            </div>
+        {/* Table */}
+        <div className="overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 shadow-2xl backdrop-blur-md">
+          <div className="px-6 pb-4 pt-6 sm:px-8">
+            <h2 className="text-xl font-extrabold tracking-tight sm:text-2xl">{t('lb_table_title')}</h2>
+            <p className="mt-1 text-xs text-zinc-500 sm:text-sm">{t('lb_table_sub')}</p>
           </div>
-        </section>
+
+          <div className="grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/80 px-4 py-3 text-xs font-bold text-zinc-500 sm:grid-cols-[5rem_1fr_9rem_8rem] sm:px-8">
+            <span>{t('lb_col_rank')}</span>
+            <span>{t('lb_col_player')}</span>
+            <span className="hidden text-center sm:block">{t('lb_col_title')}</span>
+            <span className="text-right">{t('lb_col_xp')}</span>
+          </div>
+
+          {loading ? (
+            <p className="px-6 py-16 text-center text-sm text-zinc-500">{t('lb_loading')}</p>
+          ) : players.length === 0 ? (
+            <p className="px-6 py-16 text-center text-sm text-zinc-500">
+              {t('lb_empty')}
+            </p>
+          ) : (
+            <ul>
+              {players.map((player, index) => {
+                const rank = index + 1;
+                const title = titleForXp(player.xp);
+                const rowTint =
+                  rank === 1
+                    ? 'bg-amber-500/[0.07]'
+                    : rank === 2
+                      ? 'bg-zinc-400/[0.05]'
+                      : rank === 3
+                        ? 'bg-orange-500/[0.06]'
+                        : 'hover:bg-white/[0.03]';
+                const rankColor =
+                  rank === 1 ? 'text-amber-400' : rank === 2 ? 'text-zinc-300' : rank === 3 ? 'text-orange-400' : 'text-zinc-400';
+
+                return (
+                  <li
+                    key={`${rank}-${player.username}`}
+                    className={`grid grid-cols-[3.5rem_1fr_auto] items-center gap-3 border-b border-zinc-800/60 px-4 py-3.5 transition-colors last:border-0 sm:grid-cols-[5rem_1fr_9rem_8rem] sm:px-8 ${rowTint}`}
+                  >
+                    <span className={`flex items-center gap-2 text-sm font-black ${rankColor}`}>
+                      {rank === 1 ? (
+                        <Crown className="h-4 w-4" />
+                      ) : (
+                        <Trophy className={`h-4 w-4 ${rank > 3 ? 'opacity-40' : ''}`} />
+                      )}
+                      {rank}
+                    </span>
+
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-sm font-black text-white ${
+                          AVATAR_COLORS[index % AVATAR_COLORS.length]
+                        }`}
+                      >
+                        {(player.username || '?').charAt(0).toUpperCase()}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-bold text-zinc-100">{player.username}</span>
+                        <span className={`block text-[10px] font-extrabold tracking-wide sm:hidden ${title.color}`}>
+                          {title.label}
+                        </span>
+                      </span>
+                    </span>
+
+                    <span className={`hidden items-center justify-center gap-1.5 text-xs font-extrabold tracking-wide sm:flex ${title.color}`}>
+                      <Hexagon className="h-4 w-4" />
+                      {title.label}
+                    </span>
+
+                    <span className="text-right font-mono text-xs font-bold text-red-400 sm:text-sm">
+                      {player.xp.toLocaleString('en-US')} XP
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-600/20 transition hover:bg-red-500 active:scale-95"
+          >
+            {t('back_to_home')}
+          </Link>
+        </div>
       </div>
     </main>
   );
