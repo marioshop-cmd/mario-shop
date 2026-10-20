@@ -348,11 +348,6 @@ export default function HomePage() {
         <FeaturedProducts />
       </section>
 
-      {/* 1b. BROWSE BY CATEGORY */}
-      <section className="max-w-7xl mx-auto px-4 mb-12">
-        <CategoryBrowser />
-      </section>
-
       {/* 2. CALL TO ACTION BUTTONS */}
       <section className="max-w-7xl mx-auto px-4 mb-16 flex justify-center">
         <div className="flex flex-col sm:flex-row gap-4">
@@ -364,6 +359,11 @@ export default function HomePage() {
             {t('join_discord')}
           </a>
         </div>
+      </section>
+
+      {/* 2b. OUR SERVICE CATEGORY: under the Browse Catalog / Discord buttons, above the stats and reviews */}
+      <section className="max-w-7xl mx-auto px-4 mb-12">
+        <CategoryBrowser />
       </section>
 
       {/* 3. ANIMATED TRUST STATISTICS */}
