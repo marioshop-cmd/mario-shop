@@ -79,26 +79,6 @@ export default function CategoryBrowser() {
           })}
         </div>
       </div>
-
-      <style jsx global>{`
-        @keyframes catMarquee {
-          from { transform: translateX(-50%); }
-          to { transform: translateX(0); }
-        }
-        .cat-track {
-          display: flex;
-          flex-wrap: nowrap;
-          width: max-content;
-          animation: catMarquee 60s linear infinite;
-          will-change: transform;
-        }
-        .cat-marquee:hover .cat-track {
-          animation-play-state: paused;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .cat-track { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }

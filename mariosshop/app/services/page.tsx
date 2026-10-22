@@ -1,5 +1,5 @@
  'use client';
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -10,6 +10,7 @@ import {
   getAllBrands,
   getRelatedProducts,
   onProductsChanged,
+  peekBrands,
   type BrandService,
   type Product,
   type ProductVariant,
@@ -80,12 +81,21 @@ function ServicesPageInner() {
   const { t } = useLanguage();
   const categoryLabel = (cat: string): string => t(CATEGORY_LABEL_KEYS[cat] || CATEGORY_KEYS[cat] || cat);
   const searchParams = useSearchParams();
-  const [brands, setBrands] = useState<BrandService[]>([]);
+  // Start from the catalog that is already in memory (when you come from another
+  // page), so the list is on screen immediately instead of empty.
+  const [brands, setBrands] = useState<BrandService[]>(() => peekBrands() ?? []);
+  const [catalogLoaded, setCatalogLoaded] = useState<boolean>(() => peekBrands() !== null);
   useEffect(() => {
     const refresh = () => {
-      getAllBrands().then(setBrands).catch((error: unknown) => {
-        console.error('Unable to load services:', error);
-      });
+      getAllBrands()
+        .then((data) => {
+          setBrands(data);
+          setCatalogLoaded(true);
+        })
+        .catch((error: unknown) => {
+          console.error('Unable to load services:', error);
+          setCatalogLoaded(true);
+        });
     };
     refresh();
     const unsubscribe = onProductsChanged(refresh);
@@ -187,6 +197,14 @@ function ServicesPageInner() {
     }
   }, [searchParams]);
   const [sortOrder, setSortOrder] = useState<"default" | "name-asc" | "most-products">("default");
+  // Only the first cards are drawn at first; more appear as you scroll near the end.
+  // This keeps the page light and the scrolling smooth with a big catalog.
+  const PAGE_SIZE = 12;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [selectedCategory, searchQuery, sortOrder]);
   // Filter Brands
   const filteredBrands = brands
     .filter((brand) => {
@@ -200,6 +218,19 @@ function ServicesPageInner() {
       if (sortOrder === "most-products") return b.products.length - a.products.length;
       return 0; // "default" keeps original catalog order
     });
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || visibleCount >= filteredBrands.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) setVisibleCount((count) => count + PAGE_SIZE);
+      },
+      { rootMargin: '900px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [visibleCount, filteredBrands.length]);
   const handleOpenProduct = (product: Product) => {
     setSelectedProduct(product);
     if (product.variants && product.variants.length > 0) {
@@ -645,13 +676,22 @@ function ServicesPageInner() {
                   </div>
                 )}
 
-                {filteredBrands.length === 0 ? (
+                {!catalogLoaded && brands.length === 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                    {Array.from({ length: 8 }).map((_, index) => (
+                      <div
+                        key={index}
+                        className="aspect-[4/5] animate-pulse rounded-2xl border border-zinc-800/60 bg-zinc-900/60"
+                      />
+                    ))}
+                  </div>
+                ) : filteredBrands.length === 0 ? (
                   <div className="bg-zinc-900/20 border border-zinc-900 rounded-2xl p-12 text-center text-zinc-500 text-sm">
                     {t('no_services_found')}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-                    {filteredBrands.map((brand) => {
+                    {filteredBrands.slice(0, visibleCount).map((brand) => {
                       // Lowest real price on this card (variants or product),
                       // shown plainly with no "From" wording. Items with no
                       // price set yet show nothing instead of "0.00 DT".
@@ -687,6 +727,7 @@ function ServicesPageInner() {
                             src={brand.logo}
                             alt={brand.name}
                             loading="lazy"
+                            decoding="async"
                             className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105"
                           />
                           <div
@@ -720,6 +761,9 @@ function ServicesPageInner() {
                         </div>
                       );
                     })}
+                    {visibleCount < filteredBrands.length && (
+                      <div ref={sentinelRef} className="col-span-full h-10" aria-hidden="true" />
+                    )}
                   </div>
                 )}
               </main>

@@ -5,8 +5,7 @@
   --foreground: #171717;
 }
 
-/* Tailwind CSS v4 @theme at-rule is valid, but generic CSS linters still flag it. */
-/* css-lint-disable unknownAtRules */
+/* Tailwind CSS v4 at-rule; ignored by generic CSS linters. */
 /* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-background: var(--background);
@@ -115,4 +114,33 @@ body::before {
 .cv-auto {
   content-visibility: auto;
   contain-intrinsic-size: auto 480px;
+}
+
+/* ===== Our Service Category: moving row ===== */
+@keyframes catMarquee {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+.cat-track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: max-content;
+  animation: catMarquee 60s linear infinite;
+  will-change: transform;
+}
+
+/* Pause on hover only where a real mouse exists. On phones a tap would leave
+   the row "hovered" and frozen. */
+@media (hover: hover) {
+  .cat-marquee:hover .cat-track {
+    animation-play-state: paused;
+  }
+}
+
+/* People who asked their system for less motion get a much slower row, not a frozen one. */
+@media (prefers-reduced-motion: reduce) {
+  .cat-track {
+    animation-duration: 180s;
+  }
 }

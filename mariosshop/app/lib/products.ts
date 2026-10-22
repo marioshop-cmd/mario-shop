@@ -204,14 +204,30 @@ async function readBrands(): Promise<BrandService[]> {
 // per component, they share one request for a few seconds. Anything that
 // WRITES (add/update/delete/review/stock) still reads fresh with readBrands(),
 // and every write or change event clears this cache.
-const BRANDS_CACHE_MS = 5000;
+const BRANDS_CACHE_MS = 30000;
 let brandsCache: { at: number; promise: Promise<BrandService[]> } | null = null;
+
+// The last catalog that loaded successfully. It is kept even after the cache
+// above expires, so a page can show it INSTANTLY while the fresh copy downloads
+// (this is what makes moving between pages feel immediate).
+let lastBrands: BrandService[] | null = null;
+
+/** The last loaded catalog, or null if nothing has loaded yet in this visit. */
+export function peekBrands(): BrandService[] | null {
+  return lastBrands;
+}
 
 function readBrandsCached(): Promise<BrandService[]> {
   if (brandsCache && Date.now() - brandsCache.at < BRANDS_CACHE_MS) {
     return brandsCache.promise;
   }
   const promise = readBrands();
+  promise.then(
+    (brands) => {
+      lastBrands = brands;
+    },
+    () => {},
+  );
   brandsCache = { at: Date.now(), promise };
   promise.catch(() => {
     if (brandsCache && brandsCache.promise === promise) brandsCache = null;
@@ -503,7 +519,7 @@ function ensureSharedSubscription() {
     // Keep a fallback for deployments where Realtime has not yet been enabled.
     sharedInterval = window.setInterval(() => {
       if (!document.hidden) notifyAllListeners();
-    }, 30000);
+    }, 60000);
   }
 }
 

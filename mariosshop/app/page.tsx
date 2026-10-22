@@ -266,11 +266,13 @@ export default function HomePage() {
           animation: marqueeMove 40s linear infinite !important;
           will-change: transform;
         }
-        .marquee-container:hover {
-          animation-play-state: paused !important;
+        @media (hover: hover) {
+          .marquee-container:hover {
+            animation-play-state: paused !important;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
-          .marquee-container { animation: none !important; }
+          .marquee-container { animation-duration: 120s !important; }
         }
 
         @keyframes starPopIn {

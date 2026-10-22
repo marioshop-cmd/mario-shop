@@ -39,7 +39,8 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const userBalance = currentUser?.b9chich ?? 0;
+  // Round to 2 decimals so a balance never shows as 99673.03999999998
+  const userBalance = Math.round((currentUser?.b9chich ?? 0) * 100) / 100;
 
   // Live product catalog for the search bar — pulled from the same shared
   // Supabase-backed source the Services page and admin dashboard already
