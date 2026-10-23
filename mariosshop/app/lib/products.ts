@@ -307,8 +307,8 @@ function carouselPrice(product: Product): string {
   return product.price;
 }
 
-export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
-  return (await readBrandsCached()).flatMap((brand) =>
+function featuredFrom(brands: BrandService[]): FeaturedCarouselItem[] {
+  return brands.flatMap((brand) =>
     brand.products
       .filter((p) => p.featured)
       .map((p) => ({
@@ -322,6 +322,16 @@ export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
         link: `/services?brandId=${encodeURIComponent(brand.id)}&productId=${p.id}`,
       }))
   );
+}
+
+export async function getFeaturedProducts(): Promise<FeaturedCarouselItem[]> {
+  return featuredFrom(await readBrandsCached());
+}
+
+/** The featured products from the catalog already in memory (null before anything
+ * has loaded). Lets the home page show the first post immediately. */
+export function peekFeaturedProducts(): FeaturedCarouselItem[] | null {
+  return lastBrands ? featuredFrom(lastBrands) : null;
 }
 
 /** Adds a brand-new product. Since the admin form doesn't deal in variants

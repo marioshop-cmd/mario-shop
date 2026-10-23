@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getFeaturedProducts, onProductsChanged, type FeaturedCarouselItem } from '../lib/products';
 
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<FeaturedCarouselItem[]>([]);
   const [activeProduct, setActiveProduct] = useState<FeaturedCarouselItem | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     const load = () => {
@@ -15,14 +16,33 @@ export default function FeaturedProducts() {
         // Keep the current selection if it's still featured; otherwise fall
         // back to the first one so the carousel never shows a stale pick.
         setActiveProduct((prev) => featured.find((p) => p.id === prev?.id) || featured[0] || null);
+        setLoaded(true);
       }).catch((error: unknown) => {
         console.error('Unable to load featured products:', error);
+        setLoaded(true);
       });
     };
     load();
     const unsubscribe = onProductsChanged(load);
     return unsubscribe;
   }, []);
+
+  // While the first load is running, hold the card's place with a pulsing outline
+  // (the page no longer jumps when the post appears).
+  if (!activeProduct && !loaded) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 px-4" aria-hidden="true">
+        <div className="w-full max-w-xl animate-pulse overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-950/90">
+          <div className="h-[280px] bg-zinc-900 md:h-[320px]" />
+          <div className="space-y-3 p-6 md:p-8">
+            <div className="h-5 w-40 rounded-full bg-zinc-800" />
+            <div className="h-8 w-3/4 rounded-lg bg-zinc-800" />
+            <div className="h-10 w-1/2 rounded-lg bg-zinc-800" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!activeProduct) return null; // Nothing marked as Featured yet.
 
@@ -39,6 +59,8 @@ export default function FeaturedProducts() {
           <img
             src={activeProduct.image}
             alt={activeProduct.title}
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-500 transform scale-100 hover:scale-105"
           />
         </div>

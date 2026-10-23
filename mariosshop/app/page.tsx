@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import FaqSection from './components/FaqSection';
 import FeaturedProducts from './components/FeaturedProducts';
@@ -26,68 +26,50 @@ const TUNISIAN_PAYMENTS = [
   { id: "3", titleKey: "payment3_title", descKey: "payment3_desc", logo: "/payment/poste-tn.png", badge: "POSTE TUNISIE" },
 ];
 
-// Custom Hook for Counter Animation
-function useStatsAnimation(targets: {
-  happyCustomers: number;
-  activeProducts: number;
-}) {
-  const [values, setValues] = useState({
-    happyCustomers: 0,
-    activeProducts: 0,
-  });
+// A number that counts up once, when it scrolls into view. It updates its own text
+// directly (no React state), so the rest of the page is NOT redrawn on every frame.
+// (The old version redrew the whole home page about 60 times a second, forever.)
+function AnimatedCounter({ target }: { target: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    let frame: number;
-    let timeout: ReturnType<typeof setTimeout>;
+    const el = ref.current;
+    if (!el) return;
 
-    const duration = 3500; // Slower & luxury
-    const pause = 3000;
+    let frame = 0;
+    const duration = 2500;
 
-    const animate = () => {
+    const run = () => {
       const start = performance.now();
-
-      const update = (time: number) => {
+      const tick = (time: number) => {
         const progress = Math.min((time - start) / duration, 1);
-
         // Smooth Apple-like easing
-        const eased =
-          progress < 0.5
-            ? 4 * progress * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-        setValues({
-          happyCustomers: Math.round(eased * targets.happyCustomers),
-          activeProducts: Math.round(eased * targets.activeProducts),
-        });
-
-        if (progress < 1) {
-          frame = requestAnimationFrame(update);
-        } else {
-          setValues(targets);
-
-          timeout = setTimeout(() => {
-            setValues({
-              happyCustomers: 0,
-              activeProducts: 0,
-            });
-
-            animate();
-          }, pause);
-        }
+        const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        el.textContent = Math.round(eased * target).toLocaleString();
+        if (progress < 1) frame = requestAnimationFrame(tick);
       };
-
-      frame = requestAnimationFrame(update);
+      el.textContent = '0';
+      frame = requestAnimationFrame(tick);
     };
 
-    animate();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          observer.disconnect();
+          run();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
 
     return () => {
+      observer.disconnect();
       cancelAnimationFrame(frame);
-      clearTimeout(timeout);
     };
-  }, [targets.happyCustomers, targets.activeProducts]);
+  }, [target]);
 
-  return values;
+  return <span ref={ref}>{target.toLocaleString()}</span>;
 }
 
 // Animated 5-star rating block
@@ -198,12 +180,6 @@ export default function HomePage() {
   const [rating, setRating] = useState(5);
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [reviewSubmitError, setReviewSubmitError] = useState('');
-
-  // Animated Counter Values
-  const { happyCustomers, activeProducts } = useStatsAnimation({
-    happyCustomers: 10000,
-    activeProducts: 1000,
-  });
 
   const averageRating =
     reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 5;
@@ -372,11 +348,11 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 mb-20">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full border-t border-b border-zinc-900 py-12 text-center">
          <div className="stat-card">
-            <h3 className="counter-glow text-3xl font-black text-white font-mono" style={{ animationDelay: '0ms, 700ms' }}>{happyCustomers.toLocaleString()}+</h3>
+            <h3 className="counter-glow text-3xl font-black text-white font-mono" style={{ animationDelay: '0ms, 700ms' }}><AnimatedCounter target={10000} />+</h3>
             <p className="text-sm text-zinc-500 uppercase tracking-wider mt-1">{t('stat_happy_customers')}</p>
           </div>
           <div className="stat-card">
-            <h3 className="counter-glow text-3xl font-black text-white font-mono" style={{ animationDelay: '150ms, 850ms' }}>{activeProducts.toLocaleString()}+</h3>
+            <h3 className="counter-glow text-3xl font-black text-white font-mono" style={{ animationDelay: '150ms, 850ms' }}><AnimatedCounter target={1000} />+</h3>
             <p className="text-sm text-zinc-500 uppercase tracking-wider mt-1">{t('stat_products_active')}</p>
           </div>
           <div className="stat-card">
@@ -391,7 +367,7 @@ export default function HomePage() {
       </section>
 
       {/* 4. INFINITE MOVING REVIEWS SECTION */}
-      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
+      <section className="max-w-7xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
           <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
@@ -439,7 +415,7 @@ export default function HomePage() {
       
 
       {/* 6. HOW IT WORKS SECTION */}
-      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
+      <section className="max-w-7xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black tracking-tight text-white">{t('how_to_order')}</h2>
@@ -470,7 +446,7 @@ export default function HomePage() {
 
       {/* 7. PAYMENT METHODS: title, text and the ADD B9CHICH button on one side,
               the methods you can use as chips on the other (stacked on phones). */}
-      <section className="cv-auto max-w-7xl mx-auto px-4 mt-20">
+      <section className="max-w-7xl mx-auto px-4 mt-20">
         <div className="relative overflow-hidden rounded-3xl border border-zinc-800/60 bg-zinc-950/60 p-6 shadow-2xl backdrop-blur-md md:p-10">
           <div className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full bg-red-600/15 blur-[90px]" />
 
@@ -549,7 +525,7 @@ export default function HomePage() {
       )}
 
       {/* 5. JOIN THE RANKS BANNER (top clients live on /leaderboard) */}
-      <section className="cv-auto max-w-5xl mx-auto px-4 mt-20">
+      <section className="max-w-5xl mx-auto px-4 mt-20">
         <div className="bg-zinc-950/60 backdrop-blur-md border border-zinc-800/60 rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
           <div className="pointer-events-none absolute -right-20 top-1/2 h-64 w-64 -translate-y-1/2 rounded-full bg-red-600/15 blur-[90px]" />
 

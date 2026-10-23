@@ -99,15 +99,14 @@ body::before {
 }
 
 /* Blurring what is behind a panel is the most expensive thing to redraw while
-   scrolling. Phones skip it (the panels are already dark enough). */
-@media (max-width: 767px) {
-  .backdrop-blur-sm,
-  .backdrop-blur-md,
-  .backdrop-blur-lg,
-  .backdrop-blur-xl {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
+   scrolling, on phones AND on computers (the background image is fixed, so the
+   blur is recomputed on every scroll step). The panels are dark enough without it. */
+.backdrop-blur-sm,
+.backdrop-blur-md,
+.backdrop-blur-lg,
+.backdrop-blur-xl {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Home sections below the screen are not drawn until you scroll near them. */
