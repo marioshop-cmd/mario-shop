@@ -10,6 +10,27 @@ function getSupabase() {
   });
 }
 
+// Sends a small alert to n8n. It can never break the site: errors are only logged.
+async function notify(table: string, id: string): Promise<void> {
+  const url = process.env.N8N_ORDER_WEBHOOK_URL;
+  const secret = process.env.N8N_WEBHOOK_SECRET;
+  if (!url || !secret) return;
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-secret': secret,
+      },
+      body: JSON.stringify({ record: { table, id } }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (error) {
+    console.error('notify failed', error);
+  }
+}
+
 export async function GET() {
   let supabase;
   try {
@@ -53,6 +74,19 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Tickets must be an array' }, { status: 400 });
   }
 
+  // How many tickets existed before this save (used to detect new ones)
+  let oldCount = 0;
+  try {
+    const { data: current } = await supabase
+      .from('tickets')
+      .select('tickets')
+      .eq('id', 1)
+      .maybeSingle();
+    oldCount = Array.isArray(current?.tickets) ? current.tickets.length : 0;
+  } catch (error) {
+    console.error('Could not read previous tickets:', error);
+  }
+
   const { error } = await supabase
     .from('tickets')
     .upsert({ id: 1, tickets, updated_at: new Date().toISOString() }, { onConflict: 'id' });
@@ -63,6 +97,11 @@ export async function PUT(request: Request) {
       { error: 'Failed to save tickets', details: error.message, code: error.code },
       { status: 500 },
     );
+  }
+
+  const added = tickets.length - oldCount;
+  if (added > 0) {
+    await notify('tickets', `${added} new`);
   }
 
   return NextResponse.json({ ok: true });
